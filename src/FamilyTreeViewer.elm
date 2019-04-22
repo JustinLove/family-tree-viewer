@@ -1,6 +1,7 @@
 module FamilyTreeViewer exposing (..)
 
 import View
+import Viz
 
 import Browser
 import Browser.Dom
@@ -11,7 +12,7 @@ import Url.Parser.Query
 
 type Msg
   = UI View.Msg
-
+  | GraphText (Result Http.Error String)
 
 type alias Model =
   {
@@ -25,21 +26,30 @@ main = Browser.document
   }
 
 init : String -> (Model, Cmd Msg)
-init href =
+init fragment =
   let
-    url = Url.fromString href
-      |> Maybe.withDefault (Url Url.Http "" Nothing "" Nothing Nothing)
-    targetDocument = extractHashArgument "gv" url
+    url = (Url Url.Http "" Nothing "" Nothing (Just (String.dropLeft 1 fragment)))
   in
-  ( {
+  ( { 
     }
-  , Cmd.none
+  , extractHashArgument "gv" url
+    |> Maybe.map (\targetUrl -> Http.get
+      { url = targetUrl
+      , expect = Http.expectString GraphText
+      }
+    )
+    |> Maybe.withDefault Cmd.none
   )
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
     UI (View.None) -> (model, Cmd.none)
+    GraphText (Ok text) ->
+      (model, Viz.renderGraphviz text)
+    GraphText (Err error) ->
+      let _ = Debug.log "fetch graph failed" error in
+      (model, Cmd.none)
 
 subscriptions : Model -> Sub Msg
 subscriptions model =

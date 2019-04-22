@@ -15,9 +15,27 @@
 </body>
 
 <script type="text/javascript">
-var app = Elm.FamilyTreeViewer.init({flags: window.location.href})
+var app = Elm.FamilyTreeViewer.init({flags: window.location.hash})
 const workerURL = 'lite.render.js';
 let viz = new Viz({ workerURL });
+
+if (app.ports.renderGraphviz) {
+  app.ports.renderGraphviz.subscribe(function(text) {
+    return viz.renderSVGElement(text).then(function(element) {
+      document.getElementById('graph').appendChild(element)
+      svgPanZoom(element, {
+        zoomEnabled: true,
+        controlIconsEnabled: true,
+        fit: true,
+        center: true,
+        maxZoom: 100.0,
+        minZoom: 0.5
+      })
+    })
+  })
+}
+
+/*
 fetch("2018-11-25_363_EVE COLIN.gv").then(function(response) {
 //fetch("boots.gv").then(function(response) {
   return response.text()
@@ -34,6 +52,8 @@ fetch("2018-11-25_363_EVE COLIN.gv").then(function(response) {
     minZoom: 0.5
   })
 })
+*/
+
 </script>
 <script defer src="svgxuse.js"></script>
 

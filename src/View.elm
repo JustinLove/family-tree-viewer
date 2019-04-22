@@ -17,4 +17,4 @@ document tagger model =
 view : model -> Html Msg
 view model = 
   layout [] <|
-    el [htmlAttribute <| Html.Attributes.id "graph"] none
+    html <| Html.div [Html.Attributes.id "graph"] []
