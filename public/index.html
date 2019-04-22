@@ -1,0 +1,40 @@
+<!DOCTYPE HTML>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>OHOL Family Trees</title>
+  <link href="style.css" rel="stylesheet" />
+  <script type="text/javascript" src="viz.js"></script>
+  <script type="text/javascript" src="svg-pan-zoom.min.js"></script>
+</head>
+
+<body>
+  <div id='graph'></div>
+</body>
+
+<script type="text/javascript">
+//var app = Elm.Hostable.init({flags: href})
+const workerURL = 'lite.render.js';
+let viz = new Viz({ workerURL });
+fetch("2018-11-25_363_EVE COLIN.gv").then(function(response) {
+//fetch("boots.gv").then(function(response) {
+  return response.text()
+}).then(function(text) {
+  return viz.renderSVGElement(text)
+}).then(function(element) {
+  document.getElementById('graph').appendChild(element)
+  svgPanZoom(element, {
+    zoomEnabled: true,
+    controlIconsEnabled: true,
+    fit: true,
+    center: true,
+    maxZoom: 100.0,
+    minZoom: 0.5
+  })
+})
+</script>
+<script defer src="svgxuse.js"></script>
+
+</html>
+
