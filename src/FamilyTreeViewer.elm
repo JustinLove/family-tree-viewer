@@ -1,7 +1,7 @@
 module FamilyTreeViewer exposing (..)
 
 import OHOLData.Decode as Data
-import View
+import View exposing (Mode(..))
 import Viz
 
 import Browser
@@ -23,6 +23,7 @@ type Msg
 type alias Model =
   { searchTerm : String
   , lives : List Life
+  , mode : Mode
   }
 
 type alias Life =
@@ -45,6 +46,7 @@ init fragment =
   in
   ( { searchTerm = ""
     , lives = []
+    , mode = Query
     }
   , extractHashArgument "gv" url
     |> Maybe.map (\targetUrl -> Http.get
