@@ -7,6 +7,7 @@ import Viz
 import Browser
 import Browser.Dom
 import Http
+import Task
 import Time exposing (Posix)
 import Url exposing (Url)
 import Url.Builder as Url
@@ -19,17 +20,23 @@ type Msg
   = UI View.Msg
   | GraphText (Result Http.Error String)
   | MatchingLives (Result Http.Error (List Data.Life))
+  | CurrentZone Time.Zone
 
 type alias Model =
   { searchTerm : String
   , lives : List Life
   , mode : Mode
+  , zone : Time.Zone
   }
 
 type alias Life =
   { birthTime : Posix
   , generation : Int
   , lineage : Int
+  , name : Maybe String
+  , serverId : Int
+  , epoch : Int
+  , age : Float
   }
 
 main = Browser.document
@@ -47,14 +54,18 @@ init fragment =
   ( { searchTerm = ""
     , lives = []
     , mode = Query
+    , zone = Time.utc
     }
-  , extractHashArgument "gv" url
-    |> Maybe.map (\targetUrl -> Http.get
-      { url = targetUrl
-      , expect = Http.expectString GraphText
-      }
-    )
-    |> Maybe.withDefault Cmd.none
+  , Cmd.batch 
+    [ extractHashArgument "gv" url
+      |> Maybe.map (\targetUrl -> Http.get
+        { url = targetUrl
+        , expect = Http.expectString GraphText
+        }
+      )
+      |> Maybe.withDefault Cmd.none
+    , Time.here |> Task.perform CurrentZone
+    ]
   )
 
 update : Msg -> Model -> (Model, Cmd Msg)
@@ -81,6 +92,8 @@ update msg model =
     MatchingLives (Err error) ->
       let _ = Debug.log "fetch lives failed" error in
       (model, Cmd.none)
+    CurrentZone zone ->
+      ({model | zone = zone}, Cmd.none)
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
@@ -91,6 +104,10 @@ myLife life =
   { birthTime = life.birthTime
   , generation = life.chain
   , lineage = life.lineage
+  , name = life.name
+  , serverId = life.serverId
+  , epoch = life.epoch
+  , age = life.age
   }
 
 extractHashArgument : String -> Url -> Maybe String

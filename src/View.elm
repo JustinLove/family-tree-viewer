@@ -7,7 +7,7 @@ import Html exposing (Html)
 import Html.Attributes
 import Html.Events exposing (on)
 import Json.Decode
-import Time
+import Time exposing (Posix)
 
 type Msg
   = None
@@ -33,19 +33,48 @@ query model =
   layout [] <|
     column []
       [ searchBox
-      , showResult model.lives
+      , showResult model.zone model.lives
       ]
 
-showResult lives =
+showResult zone lives =
   lives
-    |> List.map displayLife
+    |> List.map (displayLife zone)
     |> column [ spacing 10, padding 10 ]
 
-displayLife life =
-  row [ spacing 10 ]
-    [ life.birthTime |> Time.posixToMillis |> String.fromInt |> Element.text |> Element.el []
+displayLife zone life =
+  row [ spacing 20 ]
+    [ life.name |> Maybe.withDefault "nameless" |> Element.text |> Element.el []
+    , life.age |> ceiling |> String.fromInt |> Element.text |> Element.el []
+    , life.birthTime |> date zone |> Element.text |> Element.el []
     , life.generation |> String.fromInt |> Element.text |> Element.el []
     ]
+
+date : Time.Zone -> Posix -> String
+date zone time =
+  let
+    year = Time.toYear zone time |> String.fromInt
+    month = Time.toMonth zone time |> formatMonth
+    day = Time.toDay zone time |> String.fromInt |> String.padLeft 2 '0'
+    hour = Time.toHour zone time |> String.fromInt |> String.padLeft 2 '0'
+    minute = Time.toMinute zone time |> String.fromInt |> String.padLeft 2 '0'
+  in
+    year ++ "-" ++ month ++ "-" ++ day ++ " " ++ hour ++ ":" ++ minute
+
+formatMonth : Time.Month -> String
+formatMonth month =
+  case month of
+    Time.Jan -> "01"
+    Time.Feb -> "02"
+    Time.Mar -> "03"
+    Time.Apr -> "04"
+    Time.May -> "05"
+    Time.Jun -> "06"
+    Time.Jul -> "07"
+    Time.Aug -> "08"
+    Time.Sep -> "09"
+    Time.Oct -> "10"
+    Time.Nov -> "11"
+    Time.Dec -> "12"
 
 display model =
   layout [] <|

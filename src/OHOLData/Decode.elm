@@ -12,6 +12,11 @@ type alias Life =
   , birthTime : Posix
   , chain : Int
   , lineage : Int
+  , name : Maybe String
+  , serverId : Int
+  , epoch : Int
+  , playerid : Int
+  , age : Float
   }
 
 lives : Decoder (List Life)
@@ -26,6 +31,11 @@ life =
     |> map2 (|>) (field "birth_time" timeStamp)
     |> map2 (|>) (field "chain" int)
     |> map2 (|>) (field "lineage" int)
+    |> map2 (|>) (field "name" (nullable string))
+    |> map2 (|>) (field "server_id" int)
+    |> map2 (|>) (field "epoch" int)
+    |> map2 (|>) (field "playerid" int)
+    |> map2 (|>) (field "age" float)
 
 timeStamp : Decoder Posix
 timeStamp =
