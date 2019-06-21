@@ -3,15 +3,18 @@ module View exposing (Msg(..), Mode(..), view, document)
 import Browser
 import Element exposing (..)
 import Element.Input exposing (..)
+import Element.Events as Events
 import Html exposing (Html)
 import Html.Attributes
 import Html.Events exposing (on)
+import Html.Keyed
 import Json.Decode
 import Time exposing (Posix)
 
 type Msg
   = None
   | Search String
+  | Select Int Int Int
 
 type Mode
   = Query
@@ -42,7 +45,7 @@ showResult zone lives =
     |> column [ spacing 10, padding 10 ]
 
 displayLife zone life =
-  row [ spacing 20 ]
+  row [ spacing 20, Events.onClick (Select life.serverId life.epoch life.lineage) ]
     [ life.name |> Maybe.withDefault "nameless" |> Element.text |> Element.el []
     , life.age |> ceiling |> String.fromInt |> Element.text |> Element.el []
     , life.birthTime |> date zone |> Element.text |> Element.el []
@@ -85,7 +88,7 @@ display model =
       [ searchBox
       , el [ width fill, height fill ]
         <| html
-        <| Html.div [Html.Attributes.id "graph"] []
+        <| Html.Keyed.node "div" [] [("graph", Html.div [Html.Attributes.id "graph"] []) ]
       ]
 
 searchBox : Element Msg

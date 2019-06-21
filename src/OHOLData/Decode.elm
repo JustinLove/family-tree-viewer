@@ -35,7 +35,7 @@ life =
     |> map2 (|>) (field "server_id" int)
     |> map2 (|>) (field "epoch" int)
     |> map2 (|>) (field "playerid" int)
-    |> map2 (|>) (field "age" float)
+    |> map2 (|>) (field "age" (oneOf [ float, null 0.0 ]))
 
 timeStamp : Decoder Posix
 timeStamp =

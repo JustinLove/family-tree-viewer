@@ -80,13 +80,24 @@ update msg model =
           , expect = Http.expectJson MatchingLives Data.lives
           }
       )
+    UI (View.Select serverId epoch lineage) ->
+      ( {model | mode = Display}
+      , Http.get
+        { url = Url.crossOrigin dataServer ["family_trees"]
+          [ Url.int "server_id" serverId
+          , Url.int "epoch" epoch
+          , Url.int "playerid" lineage
+          ]
+        , expect = Http.expectString GraphText
+        }
+      )
     GraphText (Ok text) ->
       (model, Viz.renderGraphviz text)
     GraphText (Err error) ->
       let _ = Debug.log "fetch graph failed" error in
       (model, Cmd.none)
     MatchingLives (Ok lives) ->
-      ( {model | lives = lives |> List.map myLife}
+      ( {model | mode = Query, lives = lives |> List.map myLife}
       , Cmd.none
       )
     MatchingLives (Err error) ->
