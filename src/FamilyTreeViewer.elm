@@ -1,11 +1,13 @@
 module FamilyTreeViewer exposing (..)
 
+import OHOLData.Decode as Data
 import View
 import Viz
 
 import Browser
 import Browser.Dom
 import Http
+import Time exposing (Posix)
 import Url exposing (Url)
 import Url.Builder as Url
 import Url.Parser
@@ -16,9 +18,17 @@ dataServer = "http://localhost:5000"
 type Msg
   = UI View.Msg
   | GraphText (Result Http.Error String)
+  | MatchingLives (Result Http.Error (List Data.Life))
 
 type alias Model =
   { searchTerm : String
+  , lives : List Life
+  }
+
+type alias Life =
+  { birthTime : Posix
+  , generation : Int
+  , lineage : Int
   }
 
 main = Browser.document
@@ -34,6 +44,7 @@ init fragment =
     url = (Url Url.Http "" Nothing "" Nothing (Just (String.dropLeft 1 fragment)))
   in
   ( { searchTerm = ""
+    , lives = []
     }
   , extractHashArgument "gv" url
     |> Maybe.map (\targetUrl -> Http.get
@@ -53,7 +64,7 @@ update msg model =
       , Http.get
           { url = Url.crossOrigin dataServer ["lives"]
             [ Url.string "q" term ]
-          , expect = Http.expectString GraphText
+          , expect = Http.expectJson MatchingLives Data.lives
           }
       )
     GraphText (Ok text) ->
@@ -61,10 +72,24 @@ update msg model =
     GraphText (Err error) ->
       let _ = Debug.log "fetch graph failed" error in
       (model, Cmd.none)
+    MatchingLives (Ok lives) ->
+      ( {model | lives = lives |> List.map myLife}
+      , Cmd.none
+      )
+    MatchingLives (Err error) ->
+      let _ = Debug.log "fetch lives failed" error in
+      (model, Cmd.none)
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
   Sub.none
+
+myLife : Data.Life -> Life
+myLife life =
+  { birthTime = life.birthTime
+  , generation = life.chain
+  , lineage = life.lineage
+  }
 
 extractHashArgument : String -> Url -> Maybe String
 extractHashArgument key location =
