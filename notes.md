@@ -1,3 +1,2 @@
 - loose name search
 - hash search
-- link to result

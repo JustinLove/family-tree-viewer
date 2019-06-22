@@ -55,17 +55,23 @@ main = Browser.application
 
 init : () -> Url -> Navigation.Key -> (Model, Cmd Msg)
 init _ location key =
-  ( { searchTerm = ""
-    , lives = []
-    , mode = Query
-    , zone = Time.utc
-    , location = location
-    , navigationKey = key
-    }
-  , Cmd.batch 
-    [ Time.here |> Task.perform CurrentZone
-    ]
-  )
+  let
+    initialModel =
+      { searchTerm = ""
+      , lives = []
+      , mode = Query
+      , zone = Time.utc
+      , location = location
+      , navigationKey = key
+      }
+    (model, cmd) = changeRouteTo location initialModel
+  in
+    ( model
+    , Cmd.batch
+      [ cmd
+      , Time.here |> Task.perform CurrentZone
+      ]
+    )
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
@@ -73,25 +79,18 @@ update msg model =
     UI (View.None) -> (model, Cmd.none)
     UI (View.Search term) ->
       ( {model | searchTerm = Debug.log "term" term}
-      , Http.get
-          { url = Url.crossOrigin dataServer ["lives"]
-            [ Url.string "q" term ]
-          , expect = Http.expectJson MatchingLives Data.lives
-          }
+      , fetchMatchingLives term
       )
     UI (View.Select serverId epoch lineage) ->
       ( {model | mode = Display}
-      , Http.get
-        { url = Url.crossOrigin dataServer ["family_trees"]
-          [ Url.int "server_id" serverId
-          , Url.int "epoch" epoch
-          , Url.int "playerid" lineage
-          ]
-        , expect = Http.expectString GraphText
-        }
+      , Navigation.pushUrl model.navigationKey <|
+          displayUrl model.location serverId epoch lineage
       )
     UI View.Back ->
-      ( {model | mode = Query}, Cmd.none )
+      ( model
+      , Navigation.pushUrl model.navigationKey <|
+          queryUrl model.location
+      )
     GraphText (Ok text) ->
       (model, Viz.renderGraphviz text)
     GraphText (Err error) ->
@@ -107,13 +106,28 @@ update msg model =
     CurrentZone zone ->
       ({model | zone = zone}, Cmd.none)
     CurrentUrl location ->
-      ( { model | location = location }, Cmd.none)
+      changeRouteTo location model
     Navigate (Browser.Internal url) ->
       ( {model | location = url}
       , Navigation.pushUrl model.navigationKey (Url.toString url)
       )
     Navigate (Browser.External url) ->
       (model, Navigation.load url)
+
+changeRouteTo : Url -> Model -> (Model, Cmd Msg)
+changeRouteTo location model =
+  let
+    mserverId = extractHashArgument "server_id" location
+    mepoch = extractHashArgument "epoch" location
+    mlineage = extractHashArgument "lineage" location
+  in
+    case (mserverId, mepoch, mlineage) of
+      (Just serverId, Just epoch, Just lineage) ->
+        ( { model | location = location, mode = Display }
+        , fetchFamilyTree serverId epoch lineage
+        )
+      _ ->
+        ( { model | location = location, mode = Query }, Cmd.none)
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
@@ -130,8 +144,50 @@ myLife life =
   , age = life.age
   }
 
-extractHashArgument : String -> Url -> Maybe String
+fetchMatchingLives : String -> Cmd Msg
+fetchMatchingLives term =
+  Http.get
+    { url = Url.crossOrigin dataServer ["lives"]
+      [ Url.string "q" term ]
+    , expect = Http.expectJson MatchingLives Data.lives
+    }
+
+fetchFamilyTree : Int -> Int -> Int -> Cmd Msg
+fetchFamilyTree serverId epoch lineage =
+  Http.get
+    { url = Url.crossOrigin dataServer ["family_trees"]
+      [ Url.int "server_id" serverId
+      , Url.int "epoch" epoch
+      , Url.int "playerid" lineage
+      ]
+    , expect = Http.expectString GraphText
+    }
+
+displayUrl : Url -> Int -> Int -> Int -> String
+displayUrl location serverId epoch lineage =
+  { location
+  | fragment =
+    Url.toQuery
+      [ Url.int "server_id" serverId
+      , Url.int "epoch" epoch
+      , Url.int "lineage" lineage
+      ]
+      |> String.dropLeft 1
+      |> Just
+  } |> Url.toString
+
+queryUrl : Url -> String
+queryUrl location =
+  { location | fragment = Nothing } |> Url.toString
+
+extractSearchArgument : String -> Url -> Maybe Int
+extractSearchArgument key location =
+  { location | path = "" }
+    |> Url.Parser.parse (Url.Parser.query (Url.Parser.Query.int key))
+    |> Maybe.withDefault Nothing
+
+extractHashArgument : String -> Url -> Maybe Int
 extractHashArgument key location =
   { location | path = "", query = location.fragment }
-    |> Url.Parser.parse (Url.Parser.query (Url.Parser.Query.string key))
+    |> Url.Parser.parse (Url.Parser.query (Url.Parser.Query.int key))
     |> Maybe.withDefault Nothing
