@@ -34,8 +34,8 @@ view model =
     Display -> display model
 
 query model =
-  layout [] <|
-    column []
+  layout [ height fill ] <|
+    column [ height fill, width fill ]
       [ searchBox
       , showResult model.zone model.lives
       ]
@@ -43,7 +43,7 @@ query model =
 showResult zone lives =
   lives
     |> List.map (displayLife zone)
-    |> column [ spacing 10, padding 10 ]
+    |> column [ spacing 10, padding 10, height fill, width fill, scrollbarY ]
 
 displayLife zone life =
   row [ spacing 20, Events.onClick (Select life.serverId life.epoch life.lineage) ]
@@ -93,7 +93,7 @@ display model =
           , label = Element.text "Back"
           }
         ]
-      , el [ width fill, height fill ]
+      , el [ width fill, height fill, clip ]
         <| html
         <| Html.Keyed.node "div" [] [("graph", Html.div [Html.Attributes.id "graph"] []) ]
       ]
