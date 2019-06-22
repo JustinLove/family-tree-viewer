@@ -37,7 +37,7 @@ type alias Model =
 type alias Life =
   { birthTime : Posix
   , generation : Int
-  , lineage : Int
+  , playerid : Int
   , name : Maybe String
   , serverId : Int
   , epoch : Int
@@ -81,10 +81,10 @@ update msg model =
       ( {model | searchTerm = Debug.log "term" term}
       , fetchMatchingLives term
       )
-    UI (View.Select serverId epoch lineage) ->
+    UI (View.Select serverId epoch playerid) ->
       ( {model | mode = Display}
       , Navigation.pushUrl model.navigationKey <|
-          displayUrl model.location serverId epoch lineage
+          displayUrl model.location serverId epoch playerid
       )
     UI View.Back ->
       ( model
@@ -119,12 +119,12 @@ changeRouteTo location model =
   let
     mserverId = extractHashArgument "server_id" location
     mepoch = extractHashArgument "epoch" location
-    mlineage = extractHashArgument "lineage" location
+    mplayerid = extractHashArgument "playerid" location
   in
-    case (mserverId, mepoch, mlineage) of
-      (Just serverId, Just epoch, Just lineage) ->
+    case (mserverId, mepoch, mplayerid) of
+      (Just serverId, Just epoch, Just playerid) ->
         ( { model | location = location, mode = Display }
-        , fetchFamilyTree serverId epoch lineage
+        , fetchFamilyTree serverId epoch playerid
         )
       _ ->
         ( { model | location = location, mode = Query }, Cmd.none)
@@ -137,7 +137,7 @@ myLife : Data.Life -> Life
 myLife life =
   { birthTime = life.birthTime
   , generation = life.chain
-  , lineage = life.lineage
+  , playerid = life.playerid
   , name = life.name
   , serverId = life.serverId
   , epoch = life.epoch
@@ -153,24 +153,24 @@ fetchMatchingLives term =
     }
 
 fetchFamilyTree : Int -> Int -> Int -> Cmd Msg
-fetchFamilyTree serverId epoch lineage =
+fetchFamilyTree serverId epoch playerid =
   Http.get
     { url = Url.crossOrigin dataServer ["family_trees"]
       [ Url.int "server_id" serverId
       , Url.int "epoch" epoch
-      , Url.int "playerid" lineage
+      , Url.int "playerid" playerid
       ]
     , expect = Http.expectString GraphText
     }
 
 displayUrl : Url -> Int -> Int -> Int -> String
-displayUrl location serverId epoch lineage =
+displayUrl location serverId epoch playerid =
   { location
   | fragment =
     Url.toQuery
       [ Url.int "server_id" serverId
       , Url.int "epoch" epoch
-      , Url.int "lineage" lineage
+      , Url.int "playerid" playerid
       ]
       |> String.dropLeft 1
       |> Just

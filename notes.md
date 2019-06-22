@@ -1,2 +1,1 @@
-- loose name search
-- hash search
+- formatting

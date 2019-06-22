@@ -46,7 +46,7 @@ showResult zone lives =
     |> column [ spacing 10, padding 10, height fill, width fill, scrollbarY ]
 
 displayLife zone life =
-  row [ spacing 20, Events.onClick (Select life.serverId life.epoch life.lineage) ]
+  row [ spacing 20, Events.onClick (Select life.serverId life.epoch life.playerid) ]
     [ life.name |> Maybe.withDefault "nameless" |> Element.text |> Element.el []
     , life.age |> ceiling |> String.fromInt |> Element.text |> Element.el []
     , life.birthTime |> date zone |> Element.text |> Element.el []
