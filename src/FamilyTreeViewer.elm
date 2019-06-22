@@ -6,6 +6,7 @@ import Viz
 
 import Browser
 import Browser.Dom
+import Browser.Navigation as Navigation
 import Http
 import Task
 import Time exposing (Posix)
@@ -21,12 +22,16 @@ type Msg
   | GraphText (Result Http.Error String)
   | MatchingLives (Result Http.Error (List Data.Life))
   | CurrentZone Time.Zone
+  | CurrentUrl Url
+  | Navigate Browser.UrlRequest
 
 type alias Model =
   { searchTerm : String
   , lives : List Life
   , mode : Mode
   , zone : Time.Zone
+  , location : Url
+  , navigationKey : Navigation.Key
   }
 
 type alias Life =
@@ -39,32 +44,26 @@ type alias Life =
   , age : Float
   }
 
-main = Browser.document
+main = Browser.application
   { init = init
   , update = update
   , subscriptions = subscriptions
   , view = View.document UI
+  , onUrlRequest = Navigate
+  , onUrlChange = CurrentUrl
   }
 
-init : String -> (Model, Cmd Msg)
-init fragment =
-  let
-    url = (Url Url.Http "" Nothing "" Nothing (Just (String.dropLeft 1 fragment)))
-  in
+init : () -> Url -> Navigation.Key -> (Model, Cmd Msg)
+init _ location key =
   ( { searchTerm = ""
     , lives = []
     , mode = Query
     , zone = Time.utc
+    , location = location
+    , navigationKey = key
     }
   , Cmd.batch 
-    [ extractHashArgument "gv" url
-      |> Maybe.map (\targetUrl -> Http.get
-        { url = targetUrl
-        , expect = Http.expectString GraphText
-        }
-      )
-      |> Maybe.withDefault Cmd.none
-    , Time.here |> Task.perform CurrentZone
+    [ Time.here |> Task.perform CurrentZone
     ]
   )
 
@@ -107,6 +106,14 @@ update msg model =
       (model, Cmd.none)
     CurrentZone zone ->
       ({model | zone = zone}, Cmd.none)
+    CurrentUrl location ->
+      ( { model | location = location }, Cmd.none)
+    Navigate (Browser.Internal url) ->
+      ( {model | location = url}
+      , Navigation.pushUrl model.navigationKey (Url.toString url)
+      )
+    Navigate (Browser.External url) ->
+      (model, Navigation.load url)
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
