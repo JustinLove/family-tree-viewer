@@ -10,11 +10,12 @@ import Html.Events exposing (on)
 import Html.Keyed
 import Json.Decode
 import Time exposing (Posix)
+import Url exposing (Url)
+import Url.Builder as Url
 
 type Msg
   = None
   | Search String
-  | Select Int Int Int
   | Back
 
 type Mode
@@ -37,21 +38,61 @@ query model =
   layout [ height fill ] <|
     column [ height fill, width fill ]
       [ searchBox
-      , showResult model.zone model.lives
+      , showResult model model.lives
       ]
 
-showResult zone lives =
-  lives
-    |> List.map (displayLife zone)
-    |> column [ spacing 10, padding 10, height fill, width fill, scrollbarY ]
+showResult model lives =
+  table [ spacing 10, padding 10, height fill, width fill, scrollbarY ]
+    { data = lives
+    , columns =
+      [ { header = Element.text "Name"
+        , width = px 300
+        , view = \life ->
+          link []
+            { url = displayUrl model.location life.serverId life.epoch life.playerid
+            , label = 
+              life.name
+              |> Maybe.withDefault "nameless"
+              |> Element.text
+            }
+        }
+      , { header = Element.text "Age"
+        , width = px 40
+        , view = \life ->
+          life.age
+          |> ceiling
+          |> String.fromInt
+          |> Element.text
+        }
+      , { header = Element.text "Born"
+        , width = px 200
+        , view = \life ->
+          life.birthTime
+          |> date model.zone
+          |> Element.text
+        }
+      , { header = Element.text "Gen"
+        , width = px 40
+        , view = \life ->
+          life.generation
+          |> String.fromInt
+          |> Element.text
+        }
+      ]
+    }
 
-displayLife zone life =
-  row [ spacing 20, Events.onClick (Select life.serverId life.epoch life.playerid) ]
-    [ life.name |> Maybe.withDefault "nameless" |> Element.text |> Element.el []
-    , life.age |> ceiling |> String.fromInt |> Element.text |> Element.el []
-    , life.birthTime |> date zone |> Element.text |> Element.el []
-    , life.generation |> String.fromInt |> Element.text |> Element.el []
-    ]
+displayUrl : Url -> Int -> Int -> Int -> String
+displayUrl location serverId epoch playerid =
+  { location
+  | fragment =
+    Url.toQuery
+      [ Url.int "server_id" serverId
+      , Url.int "epoch" epoch
+      , Url.int "playerid" playerid
+      ]
+      |> String.dropLeft 1
+      |> Just
+  } |> Url.toString
 
 date : Time.Zone -> Posix -> String
 date zone time =

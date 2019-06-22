@@ -81,11 +81,6 @@ update msg model =
       ( {model | searchTerm = Debug.log "term" term}
       , fetchMatchingLives term
       )
-    UI (View.Select serverId epoch playerid) ->
-      ( {model | mode = Display}
-      , Navigation.pushUrl model.navigationKey <|
-          displayUrl model.location serverId epoch playerid
-      )
     UI View.Back ->
       ( model
       , Navigation.pushUrl model.navigationKey <|
@@ -148,7 +143,9 @@ fetchMatchingLives : String -> Cmd Msg
 fetchMatchingLives term =
   Http.get
     { url = Url.crossOrigin dataServer ["lives"]
-      [ Url.string "q" term ]
+      [ Url.string "q" term
+      , Url.int "limit" 100
+      ]
     , expect = Http.expectJson MatchingLives Data.lives
     }
 
@@ -162,19 +159,6 @@ fetchFamilyTree serverId epoch playerid =
       ]
     , expect = Http.expectString GraphText
     }
-
-displayUrl : Url -> Int -> Int -> Int -> String
-displayUrl location serverId epoch playerid =
-  { location
-  | fragment =
-    Url.toQuery
-      [ Url.int "server_id" serverId
-      , Url.int "epoch" epoch
-      , Url.int "playerid" playerid
-      ]
-      |> String.dropLeft 1
-      |> Just
-  } |> Url.toString
 
 queryUrl : Url -> String
 queryUrl location =
