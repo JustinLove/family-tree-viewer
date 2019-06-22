@@ -91,6 +91,8 @@ update msg model =
         , expect = Http.expectString GraphText
         }
       )
+    UI View.Back ->
+      ( {model | mode = Query}, Cmd.none )
     GraphText (Ok text) ->
       (model, Viz.renderGraphviz text)
     GraphText (Err error) ->

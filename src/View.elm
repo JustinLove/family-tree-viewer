@@ -15,6 +15,7 @@ type Msg
   = None
   | Search String
   | Select Int Int Int
+  | Back
 
 type Mode
   = Query
@@ -85,7 +86,13 @@ display model =
       [ width fill
       , height fill
       ]
-      [ searchBox
+      [ row [ spacing 10 ]
+        [ searchBox
+        , button []
+          { onPress = Just Back
+          , label = Element.text "Back"
+          }
+        ]
       , el [ width fill, height fill ]
         <| html
         <| Html.Keyed.node "div" [] [("graph", Html.div [Html.Attributes.id "graph"] []) ]
@@ -93,17 +100,18 @@ display model =
 
 searchBox : Element Msg
 searchBox =
-  html <|
-    Html.div [ Html.Attributes.class "search" ]
-      [ Html.label [ Html.Attributes.for "search" ] [ Html.text "Character Name" ]
-      , Html.text " "
-      , Html.input
-        [ Html.Attributes.type_ "search"
-        , Html.Attributes.id "search"
-        , Html.Attributes.name "search"
-        , on "change" <| targetValue Json.Decode.string Search
-        ] []
-      ]
+  el [] <|
+    html <|
+      Html.div [ Html.Attributes.class "search" ]
+        [ Html.label [ Html.Attributes.for "search" ] [ Html.text "Character Name" ]
+        , Html.text " "
+        , Html.input
+          [ Html.Attributes.type_ "search"
+          , Html.Attributes.id "search"
+          , Html.Attributes.name "search"
+          , on "change" <| targetValue Json.Decode.string Search
+          ] []
+        ]
 
 targetValue : Json.Decode.Decoder a -> (a -> Msg) -> Json.Decode.Decoder Msg
 targetValue decoder tagger =
