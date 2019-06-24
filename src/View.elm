@@ -1,4 +1,4 @@
-module View exposing (Msg(..), Mode(..), view, document)
+module View exposing (Msg(..), Mode(..), RemoteData(..), view, document)
 
 import Browser
 import Element exposing (..)
@@ -8,6 +8,7 @@ import Html exposing (Html)
 import Html.Attributes
 import Html.Events exposing (on)
 import Html.Keyed
+import Http
 import Json.Decode
 import Time exposing (Posix)
 import Url exposing (Url)
@@ -21,6 +22,12 @@ type Msg
 type Mode
   = Query
   | Display
+
+type RemoteData a
+  = NotRequested
+  | Loading
+  | Data a
+  | Failed Http.Error
 
 --document : (Msg -> msg) -> model -> Browser.Document msg
 document tagger model =
@@ -37,11 +44,22 @@ view model =
 query model =
   layout [ height fill ] <|
     column [ height fill, width fill ]
-      [ searchBox
+      [ searchBox model.lives
       , showResult model model.lives
       ]
 
-showResult model lives =
+showResult model remote =
+  case remote of
+    NotRequested ->
+      none
+    Loading ->
+      el [ centerX, centerY ] <| Element.text "Loading"
+    Data lives ->
+      showMatchingLives model lives
+    Failed error ->
+      Element.text "Request Failed"
+
+showMatchingLives model lives =
   table [ spacing 10, padding 10, height fill, width fill, scrollbarY ]
     { data = lives
     , columns =
@@ -128,7 +146,7 @@ display model =
       , height fill
       ]
       [ row [ spacing 10 ]
-        [ searchBox
+        [ searchBox model.lives
         , button []
           { onPress = Just Back
           , label = Element.text "Back"
@@ -139,8 +157,8 @@ display model =
         <| Html.Keyed.node "div" [] [("graph", Html.div [Html.Attributes.id "graph"] []) ]
       ]
 
-searchBox : Element Msg
-searchBox =
+searchBox : RemoteData a -> Element Msg
+searchBox request =
   el [] <|
     html <|
       Html.div [ Html.Attributes.class "search" ]
@@ -150,6 +168,7 @@ searchBox =
           [ Html.Attributes.type_ "search"
           , Html.Attributes.id "search"
           , Html.Attributes.name "search"
+          , Html.Attributes.disabled (request == Loading)
           , on "change" <| targetValue Json.Decode.string Search
           ] []
         ]

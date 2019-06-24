@@ -1,7 +1,7 @@
 module FamilyTreeViewer exposing (..)
 
 import OHOLData.Decode as Data
-import View exposing (Mode(..))
+import View exposing (Mode(..), RemoteData(..))
 import Viz
 
 import Browser
@@ -27,7 +27,7 @@ type Msg
 
 type alias Model =
   { searchTerm : String
-  , lives : List Life
+  , lives : RemoteData (List Life)
   , mode : Mode
   , zone : Time.Zone
   , location : Url
@@ -58,7 +58,7 @@ init _ location key =
   let
     initialModel =
       { searchTerm = ""
-      , lives = []
+      , lives = NotRequested
       , mode = Query
       , zone = Time.utc
       , location = location
@@ -78,7 +78,10 @@ update msg model =
   case msg of
     UI (View.None) -> (model, Cmd.none)
     UI (View.Search term) ->
-      ( {model | searchTerm = Debug.log "term" term}
+      ( { model
+        | searchTerm = Debug.log "term" term
+        , lives = Loading
+        }
       , fetchMatchingLives term
       )
     UI View.Back ->
@@ -92,12 +95,12 @@ update msg model =
       let _ = Debug.log "fetch graph failed" error in
       (model, Cmd.none)
     MatchingLives (Ok lives) ->
-      ( {model | mode = Query, lives = lives |> List.map myLife}
+      ( {model | mode = Query, lives = lives |> List.map myLife |> Data}
       , Cmd.none
       )
     MatchingLives (Err error) ->
       let _ = Debug.log "fetch lives failed" error in
-      (model, Cmd.none)
+      ({model | lives = Failed error}, Cmd.none)
     CurrentZone zone ->
       ({model | zone = zone}, Cmd.none)
     CurrentUrl location ->
