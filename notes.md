@@ -1,5 +1,4 @@
 - styling
-- credit links
 - dedicated endpoints
 - indexes?
 - hash length search specilization

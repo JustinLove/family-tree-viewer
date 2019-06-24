@@ -2,7 +2,9 @@ module View exposing (Msg(..), Mode(..), RemoteData(..), view, document)
 
 import Browser
 import Element exposing (..)
-import Element.Input exposing (..)
+import Element.Input as Input
+import Element.Font as Font
+import Element.Region as Region
 import Element.Events as Events
 import Html exposing (Html)
 import Html.Attributes
@@ -10,6 +12,8 @@ import Html.Events exposing (on)
 import Html.Keyed
 import Http
 import Json.Decode
+import Svg exposing (svg, use)
+import Svg.Attributes exposing (xlinkHref)
 import Time exposing (Posix)
 import Url exposing (Url)
 import Url.Builder as Url
@@ -42,7 +46,7 @@ view model =
     Display -> display model
 
 query model =
-  layout [ height fill ] <|
+  layout [ height fill, inFront displayFooter ] <|
     column [ height fill, width fill ]
       [ searchBox model.lives
       , showResult model model.lives
@@ -53,11 +57,11 @@ showResult model remote =
     NotRequested ->
       none
     Loading ->
-      el [ centerX, centerY ] <| Element.text "Loading"
+      el [ centerX, centerY ] <| text "Loading"
     Data lives ->
       showMatchingLives model lives
     Failed error ->
-      Element.text "Request Failed"
+      text "Request Failed"
 
 showLoading : RemoteData a -> Element Msg
 showLoading remote =
@@ -65,17 +69,17 @@ showLoading remote =
     NotRequested ->
       none
     Loading ->
-      el [ centerX, centerY ] <| Element.text "Loading"
+      el [ centerX, centerY ] <| text "Loading"
     Data _ ->
       none
     Failed error ->
-      Element.text "Request Failed"
+      text "Request Failed"
 
 showMatchingLives model lives =
   table [ spacing 10, padding 10, height fill, width fill, scrollbarY ]
     { data = lives
     , columns =
-      [ { header = Element.text "Name"
+      [ { header = text "Name"
         , width = px 300
         , view = \life ->
           link []
@@ -83,30 +87,30 @@ showMatchingLives model lives =
             , label = 
               life.name
               |> Maybe.withDefault "nameless"
-              |> Element.text
+              |> text
             }
         }
-      , { header = Element.text "Age"
+      , { header = text "Age"
         , width = px 40
         , view = \life ->
           life.age
           |> ceiling
           |> String.fromInt
-          |> Element.text
+          |> text
         }
-      , { header = Element.text "Born"
+      , { header = text "Born"
         , width = px 200
         , view = \life ->
           life.birthTime
           |> date model.zone
-          |> Element.text
+          |> text
         }
-      , { header = Element.text "Gen"
+      , { header = text "Gen"
         , width = px 40
         , view = \life ->
           life.generation
           |> String.fromInt
-          |> Element.text
+          |> text
         }
       ]
     }
@@ -152,16 +156,16 @@ formatMonth month =
     Time.Dec -> "12"
 
 display model =
-  layout [] <|
+  layout [ inFront displayFooter ] <|
     column
       [ width fill
       , height fill
       ]
       [ row [ spacing 10 ]
         [ searchBox model.lives
-        , button []
+        , Input.button []
           { onPress = Just Back
-          , label = Element.text "Back"
+          , label = text "Back"
           }
         ]
       , showLoading model.graphText
@@ -186,7 +190,36 @@ searchBox request =
           ] []
         ]
 
+displayFooter : Element msg
+displayFooter =
+  row [ Region.footer, spacing 10, padding 2, alignBottom, Font.size (scaled 500 -2) ]
+    [ link []
+      { url = "https://github.com/JustinLove/family-trees-viewer"
+      , label = row [] [ icon "github", text "family-trees-viewer" ]
+      }
+    , link []
+      { url = "https://github.com/JustinLove/ohol-data-server"
+      , label = row [] [ icon "github", text "ohol-data-server" ]
+      }
+    , link []
+      { url = "https://github.com/JustinLove/ohol-family-trees"
+      , label = row [] [ icon "github", text "ohol-family-trees" ]
+      }
+    , link []
+      { url = "https://twitter.com/wondible"
+      , label = row [] [ icon "twitter", text "@wondible" ]
+      }
+    ]
+
+icon : String -> Element msg
+icon name =
+  svg [ Svg.Attributes.class ("icon icon-"++name) ]
+    [ use [ xlinkHref ("symbol-defs.svg#icon-"++name) ] [] ]
+  |> html
+
 targetValue : Json.Decode.Decoder a -> (a -> Msg) -> Json.Decode.Decoder Msg
 targetValue decoder tagger =
   Json.Decode.map tagger
     (Json.Decode.at ["target", "value" ] decoder)
+
+scaled height = modular (max ((toFloat height)/30) 15) 1.25 >> round
