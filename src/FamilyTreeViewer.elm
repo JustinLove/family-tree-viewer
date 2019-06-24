@@ -28,6 +28,7 @@ type Msg
 type alias Model =
   { searchTerm : String
   , lives : RemoteData (List Life)
+  , graphText : RemoteData String
   , mode : Mode
   , zone : Time.Zone
   , location : Url
@@ -59,6 +60,7 @@ init _ location key =
     initialModel =
       { searchTerm = ""
       , lives = NotRequested
+      , graphText = NotRequested
       , mode = Query
       , zone = Time.utc
       , location = location
@@ -90,10 +92,10 @@ update msg model =
           queryUrl model.location
       )
     GraphText (Ok text) ->
-      (model, Viz.renderGraphviz text)
+      ( {model | graphText = Data text}, Viz.renderGraphviz text)
     GraphText (Err error) ->
       let _ = Debug.log "fetch graph failed" error in
-      (model, Cmd.none)
+      ( {model | graphText = Failed error}, Cmd.none)
     MatchingLives (Ok lives) ->
       ( {model | mode = Query, lives = lives |> List.map myLife |> Data}
       , Cmd.none
@@ -121,7 +123,11 @@ changeRouteTo location model =
   in
     case (mserverId, mepoch, mplayerid) of
       (Just serverId, Just epoch, Just playerid) ->
-        ( { model | location = location, mode = Display }
+        ( { model
+          | location = location
+          , mode = Display
+          , graphText = Loading
+          }
         , fetchFamilyTree serverId epoch playerid
         )
       _ ->

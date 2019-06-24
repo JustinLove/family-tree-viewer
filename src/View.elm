@@ -59,6 +59,18 @@ showResult model remote =
     Failed error ->
       Element.text "Request Failed"
 
+showLoading : RemoteData a -> Element Msg
+showLoading remote =
+  case remote of
+    NotRequested ->
+      none
+    Loading ->
+      el [ centerX, centerY ] <| Element.text "Loading"
+    Data _ ->
+      none
+    Failed error ->
+      Element.text "Request Failed"
+
 showMatchingLives model lives =
   table [ spacing 10, padding 10, height fill, width fill, scrollbarY ]
     { data = lives
@@ -152,6 +164,7 @@ display model =
           , label = Element.text "Back"
           }
         ]
+      , showLoading model.graphText
       , el [ width fill, height fill, clip ]
         <| html
         <| Html.Keyed.node "div" [] [("graph", Html.div [Html.Attributes.id "graph"] []) ]
