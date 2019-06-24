@@ -1,6 +1,6 @@
 body {
-  background: white;
-  color: black;
+  background: black;
+  color: white;
 }
 
 #graph {
@@ -26,5 +26,5 @@ svg.icon {
 }
 .icon-github { color: #888; }
 .icon-twitter { color: #55acee; }
-a:link, a:visited { color: #008; }
+a:link, a:visited { color: #88f; }
 a:hover, a:active { text-decoration: underline; }

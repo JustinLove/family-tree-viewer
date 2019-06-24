@@ -2,10 +2,11 @@ module View exposing (Msg(..), Mode(..), RemoteData(..), view, document)
 
 import Browser
 import Element exposing (..)
-import Element.Input as Input
-import Element.Font as Font
-import Element.Region as Region
+import Element.Background as Background
 import Element.Events as Events
+import Element.Font as Font
+import Element.Input as Input
+import Element.Region as Region
 import Html exposing (Html)
 import Html.Attributes
 import Html.Events exposing (on)
@@ -41,16 +42,21 @@ document tagger model =
 
 -- view : model -> Html Msg
 view model = 
-  case model.mode of
-    Query -> query model
-    Display -> display model
+  layout
+    [ height fill
+    , Font.color foreground
+    , Background.color background
+    , inFront displayFooter
+    ] <|
+    case model.mode of
+      Query -> query model
+      Display -> display model
 
 query model =
-  layout [ height fill, inFront displayFooter ] <|
-    column [ height fill, width fill ]
-      [ searchBox model.lives
-      , showResult model model.lives
-      ]
+  column [ height fill, width fill ]
+    [ searchBox model.lives
+    , showResult model model.lives
+    ]
 
 showResult model remote =
   case remote of
@@ -156,27 +162,26 @@ formatMonth month =
     Time.Dec -> "12"
 
 display model =
-  layout [ inFront displayFooter ] <|
-    column
-      [ width fill
-      , height fill
+  column
+    [ width fill
+    , height fill
+    ]
+    [ row [ spacing 10 ]
+      [ searchBox model.lives
+      , Input.button []
+        { onPress = Just Back
+        , label = text "Back"
+        }
       ]
-      [ row [ spacing 10 ]
-        [ searchBox model.lives
-        , Input.button []
-          { onPress = Just Back
-          , label = text "Back"
-          }
-        ]
-      , showLoading model.graphText
-      , el [ width fill, height fill, clip ]
-        <| html
-        <| Html.Keyed.node "div" [] [("graph", Html.div [Html.Attributes.id "graph"] []) ]
-      ]
+    , showLoading model.graphText
+    , el [ width fill, height fill, clip, Background.color white ]
+      <| html
+      <| Html.Keyed.node "div" [] [("graph", Html.div [Html.Attributes.id "graph"] []) ]
+    ]
 
 searchBox : RemoteData a -> Element Msg
 searchBox request =
-  el [] <|
+  el [ padding 2 ] <|
     html <|
       Html.div [ Html.Attributes.class "search" ]
         [ Html.label [ Html.Attributes.for "search" ]
@@ -194,7 +199,14 @@ searchBox request =
 
 displayFooter : Element msg
 displayFooter =
-  row [ Region.footer, spacing 10, padding 2, alignBottom, Font.size (scaled 500 -2) ]
+  row
+    [ Region.footer
+    , spacing 10
+    , padding 2
+    , alignBottom
+    , Font.size (scaled 500 -2)
+    , Background.color background
+    ]
     [ link []
       { url = "https://github.com/JustinLove/family-trees-viewer"
       , label = row [] [ icon "github", text "family-trees-viewer" ]
@@ -225,3 +237,7 @@ targetValue decoder tagger =
     (Json.Decode.at ["target", "value" ] decoder)
 
 scaled height = modular (max ((toFloat height)/30) 15) 1.25 >> round
+
+foreground = rgb 0.9 0.9 0.9
+background = rgb 0.1 0.1 0.1
+white = rgb 1 1 1

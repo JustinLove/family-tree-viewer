@@ -1,5 +1,5 @@
-- styling
-- dedicated endpoints
-- indexes?
 - nicer loading indicator
 - error feedback
+- styling
+- dedicated endpoints
+- well known players?
