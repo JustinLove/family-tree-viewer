@@ -1,1 +1,6 @@
-- formatting
+- styling
+- credit links
+- dedicated endpoints
+- loading feedback
+- indexes?
+- hash length search specilization
