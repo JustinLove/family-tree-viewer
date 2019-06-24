@@ -1,6 +1,5 @@
 - styling
 - dedicated endpoints
 - indexes?
-- hash length search specilization
 - nicer loading indicator
 - error feedback

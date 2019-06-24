@@ -179,10 +179,12 @@ searchBox request =
   el [] <|
     html <|
       Html.div [ Html.Attributes.class "search" ]
-        [ Html.label [ Html.Attributes.for "search" ] [ Html.text "Character Name" ]
+        [ Html.label [ Html.Attributes.for "search" ]
+          [ Html.text "Character Name or Hash" ]
         , Html.text " "
         , Html.input
           [ Html.Attributes.type_ "search"
+          , Html.Attributes.size 42
           , Html.Attributes.id "search"
           , Html.Attributes.name "search"
           , Html.Attributes.disabled (request == Loading)
