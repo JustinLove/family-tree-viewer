@@ -1,5 +1,6 @@
 module FamilyTreeViewer exposing (..)
 
+import Config
 import OHOLData.Decode as Data
 import View exposing (Mode(..), RemoteData(..))
 import Viz
@@ -14,8 +15,6 @@ import Url exposing (Url)
 import Url.Builder as Url
 import Url.Parser
 import Url.Parser.Query
-
-dataServer = "http://localhost:5000"
 
 type Msg
   = UI View.Msg
@@ -151,7 +150,7 @@ myLife life =
 fetchMatchingLives : String -> Cmd Msg
 fetchMatchingLives term =
   Http.get
-    { url = Url.crossOrigin dataServer ["lives"]
+    { url = Url.crossOrigin Config.searchServer ["lives"]
       [ Url.string "q" term
       , Url.int "limit" 100
       ]
@@ -161,7 +160,7 @@ fetchMatchingLives term =
 fetchFamilyTree : Int -> Int -> Int -> Cmd Msg
 fetchFamilyTree serverId epoch playerid =
   Http.get
-    { url = Url.crossOrigin dataServer ["family_trees"]
+    { url = Url.crossOrigin Config.treeServer ["family_trees"]
       [ Url.int "server_id" serverId
       , Url.int "epoch" epoch
       , Url.int "playerid" playerid

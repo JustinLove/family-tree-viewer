@@ -8,6 +8,8 @@ Depends on a server [ohol-data-server](https://github.com/JustinLove/ohol-data-s
 
 Built using [Elm](http://elm-lang.org/)
 
+I often have often have the data server changed locally. Copy `src/Config.elm.example` to `src/Config.elm` and update as needed.
+
 My build command:
 
 > `elm make src/FamilyTreeViewer.elm --output public/family-tree-viewer.js
