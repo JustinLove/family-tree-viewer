@@ -43,8 +43,7 @@ document tagger model =
 -- view : model -> Html Msg
 view model = 
   layout
-    [ height fill
-    , Font.color foreground
+    [ Font.color foreground
     , Background.color background
     , inFront displayFooter
     ] <|
