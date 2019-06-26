@@ -66,7 +66,7 @@ showResult model remote =
     Data lives ->
       showMatchingLives model lives
     Failed error ->
-      text "Request Failed"
+      showError error
 
 showLoading : RemoteData a -> Element Msg
 showLoading remote =
@@ -78,7 +78,42 @@ showLoading remote =
     Data _ ->
       none
     Failed error ->
-      text "Request Failed"
+      showError error
+
+showError : Http.Error -> Element Msg
+showError error =
+  el [ centerX, centerY ] <|
+    case error of
+      Http.BadUrl url ->
+        twoPartMessage 500
+          "Bad Url"
+          "This *really* shouldn't happen."
+      Http.Timeout ->
+        twoPartMessage 500
+          "Timeout"
+          "Wondible is cheap and you are getting this for free."
+      Http.NetworkError ->
+        twoPartMessage 500
+          "Network Error"
+          "Either you or the server went offline"
+      Http.BadStatus code ->
+        twoPartMessage 500
+          (code |> String.fromInt)
+          "Server is being naughty again.'"
+      Http.BadBody body ->
+        twoPartMessage 500
+          "Bad Body"
+          body
+
+twoPartMessage : Int -> String -> String -> Element Msg
+twoPartMessage height header body =
+  column []
+    [ el [ centerX, Font.size (scaled height 2)] <|
+      text header
+    , el [ centerX, Font.size (scaled height 1)] <|
+      text body
+    ]
+
 
 showMatchingLives model lives =
   table [ spacing 10, padding 10, height fill, width fill, scrollbarY ]
