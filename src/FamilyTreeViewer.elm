@@ -80,7 +80,7 @@ update msg model =
     UI (View.None) -> (model, Cmd.none)
     UI (View.Search term) ->
       ( { model
-        | searchTerm = Debug.log "term" term
+        | searchTerm = term
         , lives = Loading
         }
       , fetchMatchingLives term
