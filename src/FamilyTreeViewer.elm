@@ -130,7 +130,17 @@ changeRouteTo location model =
         , fetchFamilyTree serverId epoch playerid
         )
       _ ->
-        ( { model | location = location, mode = Query }, Cmd.none)
+        case location.fragment of
+          Just frag ->
+            ( { model
+              | location = location
+              , mode = Display
+              , graphText = Loading
+              }
+            , fetchFamilyTreeBlob frag
+            )
+          Nothing ->
+            ( { model | location = location, mode = Query }, Cmd.none)
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
@@ -168,15 +178,16 @@ fetchFamilyTree serverId epoch playerid =
     , expect = Http.expectString GraphText
     }
 
+fetchFamilyTreeBlob : String -> Cmd Msg
+fetchFamilyTreeBlob query =
+  Http.get
+    { url = Url.crossOrigin Config.treeServer ["family_trees?" ++ query] []
+    , expect = Http.expectString GraphText
+    }
+
 queryUrl : Url -> String
 queryUrl location =
   { location | fragment = Nothing } |> Url.toString
-
-extractSearchArgument : String -> Url -> Maybe Int
-extractSearchArgument key location =
-  { location | path = "" }
-    |> Url.Parser.parse (Url.Parser.query (Url.Parser.Query.int key))
-    |> Maybe.withDefault Nothing
 
 extractHashArgument : String -> Url -> Maybe Int
 extractHashArgument key location =
