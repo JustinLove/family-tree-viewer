@@ -1,7 +1,7 @@
 module FamilyTreeViewer exposing (..)
 
 import Config
-import OHOLData.Decode as Data
+import OHOLData.Parse as Parse
 import View exposing (Mode(..), RemoteData(..))
 import Viz
 
@@ -9,6 +9,7 @@ import Browser
 import Browser.Dom
 import Browser.Navigation as Navigation
 import Http
+import Parser.Advanced as Parser
 import Task
 import Time exposing (Posix)
 import Url exposing (Url)
@@ -19,7 +20,7 @@ import Url.Parser.Query
 type Msg
   = UI View.Msg
   | GraphText (Result Http.Error String)
-  | MatchingLives (Result Http.Error (List Data.Life))
+  | MatchingLives (Result Http.Error (List Parse.Life))
   | CurrentZone Time.Zone
   | CurrentUrl Url
   | Navigate Browser.UrlRequest
@@ -146,7 +147,7 @@ subscriptions : Model -> Sub Msg
 subscriptions model =
   Sub.none
 
-myLife : Data.Life -> Life
+myLife : Parse.Life -> Life
 myLife life =
   { birthTime = life.birthTime
   , generation = life.chain
@@ -154,18 +155,32 @@ myLife life =
   , name = life.name
   , serverId = life.serverId
   , epoch = life.epoch
-  , age = life.age
+  , age = life.age |> Maybe.withDefault 0.0
   }
 
 fetchMatchingLives : String -> Cmd Msg
 fetchMatchingLives term =
-  Http.get
+  Http.request
     { url = Url.crossOrigin Config.searchServer ["lives"]
-      [ Url.string "q" term
+      [ lifeSearchParameter term
       , Url.int "limit" 100
       ]
-    , expect = Http.expectJson MatchingLives Data.lives
+    , expect = Http.expectString (parseLives >> MatchingLives)
+    , method = "GET"
+    , headers =
+        [ Http.header "Accept" "text/plain"
+        ]
+    , body = Http.emptyBody
+    , timeout = Nothing
+    , tracker = Nothing
     }
+
+lifeSearchParameter : String -> Url.QueryParameter
+lifeSearchParameter term =
+  case String.toInt term of
+    Just number -> Url.int "playerid" number
+    Nothing -> Url.string "q" term
+
 
 fetchFamilyTree : Int -> Int -> Int -> Cmd Msg
 fetchFamilyTree serverId epoch playerid =
@@ -188,6 +203,12 @@ fetchFamilyTreeBlob query =
 queryUrl : Url -> String
 queryUrl location =
   { location | fragment = Nothing } |> Url.toString
+
+parseLives : Result Http.Error String -> Result Http.Error (List Parse.Life)
+parseLives =
+  Result.andThen
+    (Parser.run Parse.lives
+      >> Result.mapError (Http.BadBody << Parse.deadEndsToString))
 
 extractHashArgument : String -> Url -> Maybe Int
 extractHashArgument key location =
