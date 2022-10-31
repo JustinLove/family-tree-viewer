@@ -3,7 +3,7 @@
   - x fetch logs
   - x display results
   - x apply search?
-  - player search
+  - lineage query
   - select a result
   - query from search link
   - query from ohol link

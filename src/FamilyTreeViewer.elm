@@ -25,7 +25,6 @@ import Url.Parser.Query
 type Msg
   = UI View.Msg
   | GraphText (Result Http.Error String)
-  | MatchingLives (Result Http.Error (List Parse.Life))
   | DataLayer Int Date (Result Http.Error LifeDataLayer.LifeLogDay)
   | CurrentZone Time.Zone
   | CurrentTime Posix
@@ -34,7 +33,6 @@ type Msg
 
 type alias Model =
   { searchTerm : String
-  , lives : RemoteData (List Life)
   , dataLayer : LifeDataLayer.LifeDataLayer
   , lifeSearch : LifeSearch.LifeSearch Life
   , graphText : RemoteData String
@@ -69,7 +67,6 @@ init _ location key =
   let
     initialModel =
       { searchTerm = ""
-      , lives = NotRequested
       , dataLayer = LifeDataLayer.empty
       , lifeSearch = LifeSearch.empty
       , graphText = NotRequested
@@ -95,18 +92,16 @@ update msg model =
     UI (View.None) -> (model, Cmd.none)
     UI (View.Search term) ->
       let
-        punt = Time.millisToPosix 0
-        (start,end) = model.timeRange |> Maybe.withDefault (punt, punt)
-        (m2, c2) = fetchLivesAroundTime start end model
         (lifeSearch, _) = LifeSearch.updateTerm myLife term model.lifeSearch
+        m2 =
+          { model
+          | searchTerm = term
+          , lifeSearch = lifeSearch
+          }
       in
-      ( { m2
-        | searchTerm = term
-        , lifeSearch = lifeSearch
-        , lives = Loading
-        }
-      , Cmd.batch [fetchMatchingLives term, c2]
-      )
+        case model.timeRange of
+          Just (start,end) -> fetchLivesAroundTime start end m2
+          Nothing -> (m2, Cmd.none)
     UI View.Back ->
       ( model
       , Navigation.pushUrl model.navigationKey <|
@@ -117,13 +112,6 @@ update msg model =
     GraphText (Err error) ->
       let _ = Debug.log "fetch graph failed" error in
       ( {model | graphText = Failed error}, Cmd.none)
-    MatchingLives (Ok lives) ->
-      ( {model | mode = Query, lives = lives |> List.map myLife |> Data}
-      , Cmd.none
-      )
-    MatchingLives (Err error) ->
-      let _ = Debug.log "fetch lives failed" error in
-      ({model | lives = Failed error}, Cmd.none)
     DataLayer serverId_ date_ (Ok lifeLogDay) ->
       lifeDataUpdated (LifeDataLayer.livesReceived lifeLogDay model.dataLayer) model
     DataLayer serverId date (Err error) ->
@@ -194,23 +182,6 @@ relativeStartTime hoursPeriod time =
     |> Time.posixToMillis
     |> (\x -> x - hoursPeriod * 60 * 60 * 1000)
     |> Time.millisToPosix
-
-fetchMatchingLives : String -> Cmd Msg
-fetchMatchingLives term =
-  Http.request
-    { url = Url.crossOrigin Config.searchServer ["lives"]
-      [ lifeSearchParameter term
-      , Url.int "limit" 100
-      ]
-    , expect = Http.expectString (parseLives >> MatchingLives)
-    , method = "GET"
-    , headers =
-        [ Http.header "Accept" "text/plain"
-        ]
-    , body = Http.emptyBody
-    , timeout = Nothing
-    , tracker = Nothing
-    }
 
 fetchLivesAroundTime : Posix -> Posix -> Model -> (Model, Cmd Msg)
 fetchLivesAroundTime startTime endTime model =
@@ -378,13 +349,6 @@ ignoreNotFound result =
   case result of
     Err (Http.BadStatus _) -> Ok ""
     _ -> result
-
-lifeSearchParameter : String -> Url.QueryParameter
-lifeSearchParameter term =
-  case String.toInt term of
-    Just number -> Url.int "playerid" number
-    Nothing -> Url.string "q" term
-
 
 fetchFamilyTree : Int -> Int -> Int -> Cmd Msg
 fetchFamilyTree serverId epoch playerid =

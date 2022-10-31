@@ -49,7 +49,7 @@ view model =
 
 query model =
   column [ height fill, width fill ]
-    [ searchBox model.lives
+    [ searchBox model.lifeSearch.results
     , showResult model model.lifeSearch.results
     ]
 
@@ -201,7 +201,7 @@ display model =
     , height fill
     ]
     [ row [ spacing 10 ]
-      [ searchBox model.lives
+      [ searchBox model.lifeSearch.results
       , Input.button []
         { onPress = Just Back
         , label = text "Back"

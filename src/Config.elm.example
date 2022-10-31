@@ -1,4 +1,3 @@
 module Config exposing (..)
 
-searchServer = "//ohol-data-server.herokuapp.com"
 treeServer = "//ohol-data-cache.wondible.com"
