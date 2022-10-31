@@ -1,12 +1,13 @@
 - raw log update
   - x import layer
   - x fetch logs
-  - display results
-  - apply search?
+  - x display results
+  - x apply search?
   - player search
   - select a result
   - query from search link
   - query from ohol link
+  - upate search on typing
 - graphviz render
 - ui update
   - time

@@ -50,7 +50,7 @@ view model =
 query model =
   column [ height fill, width fill ]
     [ searchBox model.lives
-    , showResult model model.lives
+    , showResult model model.lifeSearch.results
     ]
 
 showResult model remote =

@@ -2,6 +2,7 @@ module FamilyTreeViewer exposing (..)
 
 import Config
 import LifeDataLayer
+import LifeSearch
 import Log
 import OHOLData.ParseLives as Parse
 import RemoteData exposing (RemoteData(..))
@@ -35,6 +36,7 @@ type alias Model =
   { searchTerm : String
   , lives : RemoteData (List Life)
   , dataLayer : LifeDataLayer.LifeDataLayer
+  , lifeSearch : LifeSearch.LifeSearch Life
   , graphText : RemoteData String
   , mode : Mode
   , timeRange : Maybe (Posix, Posix)
@@ -69,6 +71,7 @@ init _ location key =
       { searchTerm = ""
       , lives = NotRequested
       , dataLayer = LifeDataLayer.empty
+      , lifeSearch = LifeSearch.empty
       , graphText = NotRequested
       , mode = Query
       , timeRange = Nothing
@@ -95,9 +98,11 @@ update msg model =
         punt = Time.millisToPosix 0
         (start,end) = model.timeRange |> Maybe.withDefault (punt, punt)
         (m2, c2) = fetchLivesAroundTime start end model
+        (lifeSearch, _) = LifeSearch.updateTerm myLife term model.lifeSearch
       in
       ( { m2
         | searchTerm = term
+        , lifeSearch = lifeSearch
         , lives = Loading
         }
       , Cmd.batch [fetchMatchingLives term, c2]
@@ -344,21 +349,12 @@ lifeDataUpdated unresolvedDataLayer model =
 
 lifeDataUpdateComplete : LifeDataLayer.LifeDataLayer -> Model -> (Model, Cmd Msg)
 lifeDataUpdateComplete dataLayer model =
-  {-
   let
-    (lifeSearch, newResults) =
-      if LifeDataLayer.isDisplayingSingleLineage dataLayer then
-        let
-          serverLives = LifeDataLayer.currentLives dataLayer
-        in
-          (LifeSearch.completeResults myLife serverLives, Just serverLives)
-      else
-        LifeSearch.updateData myLife dataLayer.lives model.lifeSearch
+    (lifeSearch, _) = LifeSearch.updateData myLife dataLayer.lives model.lifeSearch
   in
-     -}
   ( { model
     | dataLayer = dataLayer
-    --, lifeSearch = lifeSearch
+    , lifeSearch = lifeSearch
     }
   , Cmd.none
   )
