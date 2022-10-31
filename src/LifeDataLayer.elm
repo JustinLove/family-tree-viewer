@@ -80,13 +80,13 @@ updateLog date value logs =
 resolveLivesIfLoaded : Posix -> LifeDataLayer -> LifeDataLayer
 resolveLivesIfLoaded defaultTime data =
   if List.all (\(_,rd) -> rd /= Loading) data.logs then
-    resolveLives defaultTime data
+    resolveLives data
       |> expandingQuery defaultTime
   else
     data
 
-resolveLives : Posix -> LifeDataLayer -> LifeDataLayer
-resolveLives defaultTime data =
+resolveLives : LifeDataLayer -> LifeDataLayer
+resolveLives data =
   let
     lives = resolveLifeLogs data.logs
       |> List.map (\life -> {life | serverId = data.serverId})
@@ -170,7 +170,7 @@ changeDisplay : LifeDisplayFilter -> LifeDataLayer -> LifeDataLayer
 changeDisplay filter data =
   if data.displayFilter /= filter then
     { data | displayFilter = filter }
-      |> resolveLives (Time.millisToPosix 0)
+      |> resolveLives
   else
     data
 

@@ -16,6 +16,8 @@
 
 <script type="text/javascript">
 var app = Elm.FamilyTreeViewer.init()
+
+// --------------- Viz --------------------
 const workerURL = 'lite.render.js';
 let viz = new Viz({ workerURL });
 
@@ -35,6 +37,29 @@ if (app.ports.renderGraphviz) {
   })
 }
 
+
+// --------------- Log --------------------
+if (app.ports.logCommand) {
+  app.ports.logCommand.subscribe(function(message) {
+    switch(message.kind) {
+      case 'debug':
+        console.debug(message.note, message.value)
+        break
+      case 'info':
+        console.info(message.note, message.value)
+        break
+      case 'warn':
+        console.warn(message.note, message.value)
+        break
+      case 'error':
+        console.error(message.note, message.value)
+        break
+      default:
+        console.log('unknown message', message)
+        break;
+    }
+  })
+}
 </script>
 <script defer src="svgxuse.js"></script>
 

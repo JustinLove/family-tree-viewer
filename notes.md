@@ -1,5 +1,10 @@
 - raw log update
+  - x import layer
+  - x fetch logs
+  - display results
+  - apply search?
   - player search
+  - select a result
   - query from search link
   - query from ohol link
 - graphviz render
