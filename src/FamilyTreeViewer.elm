@@ -1,8 +1,10 @@
 module FamilyTreeViewer exposing (..)
 
 import Config
-import OHOLData.Parse as Parse
-import View exposing (Mode(..), RemoteData(..))
+import LifeDataLayer
+import OHOLData.ParseLives as Parse
+import RemoteData exposing (RemoteData(..))
+import View exposing (Mode(..))
 import Viz
 
 import Browser
@@ -207,7 +209,7 @@ queryUrl location =
 parseLives : Result Http.Error String -> Result Http.Error (List Parse.Life)
 parseLives =
   Result.andThen
-    (Parser.run Parse.lives
+    (Parser.run Parse.dbLives
       >> Result.mapError (Http.BadBody << Parse.deadEndsToString))
 
 extractHashArgument : String -> Url -> Maybe Int

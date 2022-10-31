@@ -1,4 +1,6 @@
-module View exposing (Msg(..), Mode(..), RemoteData(..), view, document)
+module View exposing (Msg(..), Mode(..), view, document)
+
+import RemoteData exposing (RemoteData(..))
 
 import Browser
 import Element exposing (..)
@@ -28,12 +30,6 @@ type Mode
   = Query
   | Display
 
-type RemoteData a
-  = NotRequested
-  | Loading
-  | Data a
-  | Failed Http.Error
-
 --document : (Msg -> msg) -> model -> Browser.Document msg
 document tagger model =
   { title = "Family Tree Viewer"
@@ -61,6 +57,8 @@ showResult model remote =
   case remote of
     NotRequested ->
       none
+    NotAvailable ->
+      none
     Loading ->
       el [ centerX, centerY ] <| text "Loading"
     Data lives ->
@@ -72,6 +70,8 @@ showLoading : RemoteData a -> Element Msg
 showLoading remote =
   case remote of
     NotRequested ->
+      none
+    NotAvailable ->
       none
     Loading ->
       el [ centerX, centerY ] <| text "Loading"
