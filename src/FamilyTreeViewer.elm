@@ -5,7 +5,7 @@ import LifeDataLayer
 import LifeSearch
 import Log
 import OHOLData.Decode as Decode
-import OHOLData.ParseLives as Parse
+import OHOLData.ParseLives as Parse exposing (Parent(..))
 import RemoteData exposing (RemoteData(..))
 import View exposing (Mode(..))
 import Viz
@@ -26,7 +26,6 @@ import Url.Parser.Query
 type Msg
   = UI View.Msg
   | ServerList (Result Http.Error (List Decode.Server))
-  | GraphText (Result Http.Error String)
   | DataLayer Int Date (Result Http.Error LifeDataLayer.LifeLogDay)
   | CurrentZone Time.Zone
   | CurrentTime Posix
@@ -117,11 +116,6 @@ update msg model =
     ServerList (Err error) ->
       let _ = Debug.log "fetch servers failed" error in
       ( {model | serverList = Failed error}, Cmd.none)
-    GraphText (Ok text) ->
-      ( {model | graphText = Data text}, Viz.renderGraphviz text)
-    GraphText (Err error) ->
-      let _ = Debug.log "fetch graph failed" error in
-      ( {model | graphText = Failed error}, Cmd.none)
     DataLayer serverId_ date_ (Ok lifeLogDay) ->
       lifeDataUpdated (LifeDataLayer.livesReceived lifeLogDay model.dataLayer) model
     DataLayer serverId date (Err error) ->
@@ -186,6 +180,33 @@ myLife life =
   , serverId = life.serverId
   , age = life.age |> Maybe.withDefault 0.0
   }
+
+livesToGraphViz : List Parse.Life -> String
+livesToGraphViz lives =
+  let
+    lines = lives
+      |> List.filter (\life -> case life.age of
+          Just age -> age > 0.5
+          Nothing -> False)
+      |> List.map lifeToGraphviz
+      |> String.concat
+  in
+    "digraph G {" ++ lines ++ "}" |> Debug.log "graph"
+
+lifeToGraphviz : Parse.Life -> String
+lifeToGraphviz life =
+  let
+    sid = (String.fromInt life.playerid)
+    parentLine = case life.parent of
+      NoParent -> ""
+      UnknownParent -> ""
+      ChildOf par -> (String.fromInt par) ++ " -> " ++ sid ++ "\n"
+      Lineage par _ -> (String.fromInt par) ++ " -> " ++ sid ++ "\n"
+    label = Maybe.map (\name -> "label=\"" ++ name ++ "\"") life.name
+      |> Maybe.withDefault ""
+    nodeLine = (String.fromInt life.playerid) ++ " [" ++ label ++ "]\n"
+  in
+    nodeLine ++ parentLine
 
 fetchServers : Cmd Msg
 fetchServers =
@@ -361,12 +382,16 @@ lifeDataUpdateComplete : LifeDataLayer.LifeDataLayer -> Model -> (Model, Cmd Msg
 lifeDataUpdateComplete dataLayer model =
   let
     (lifeSearch, _) = LifeSearch.updateData myLife dataLayer.lives model.lifeSearch
+    graphText = RemoteData.map livesToGraphViz dataLayer.lives
   in
   ( { model
     | dataLayer = dataLayer
     , lifeSearch = lifeSearch
+    , graphText = graphText
     }
-  , Cmd.none
+  , graphText
+    |> RemoteData.map Viz.renderGraphviz
+    |> RemoteData.withDefault Cmd.none
   )
 
 resolveStringResponse : Http.Response String -> Result Http.Error String

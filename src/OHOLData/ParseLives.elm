@@ -36,6 +36,7 @@ type Parent
   = ChildOf Int
   | Lineage Int Int
   | NoParent
+  | UnknownParent
 
 type alias Life =
   { birthX : Int
@@ -44,6 +45,7 @@ type alias Life =
   , birthPopulation : Int
   , gender : String
   , chain : Int
+  , parent : Parent
   , lineage : Int
   , name : Maybe String
   , serverId : Int
@@ -165,6 +167,7 @@ dbLife sid e pid bt (bx, by) bp g lin ch dt (dx, dy) dp a dc n =
   , birthPopulation = bp
   , gender = g
   , chain = ch
+  , parent = UnknownParent
   , lineage = lin
   , name = n
   , serverId = sid
@@ -202,6 +205,7 @@ matchParent : List Birth -> Birth -> Birth
 matchParent living child =
   case child.parent of
     NoParent -> child
+    UnknownParent -> child
     ChildOf parentid ->
       case living of
         candidate :: rest ->
@@ -210,6 +214,7 @@ matchParent living child =
               lineage =
                 case candidate.parent of
                   NoParent -> candidate.playerid
+                  UnknownParent -> candidate.playerid
                   ChildOf par -> par
                   Lineage _ lin -> lin
             in
@@ -240,10 +245,12 @@ fullLife b d =
   , birthPopulation = b.birthPopulation
   , gender = b.gender
   , chain = b.chain
+  , parent = b.parent
   , lineage = case b.parent of
     ChildOf par -> par
     Lineage par lin -> lin
     NoParent -> b.playerid
+    UnknownParent -> b.playerid
   , name = Nothing
   , serverId = 0
   , epoch = 0
@@ -348,10 +355,12 @@ rawBirth b =
   , birthPopulation = b.birthPopulation
   , gender = b.gender
   , chain = b.chain
+  , parent = b.parent
   , lineage = case b.parent of
     ChildOf par -> par
     Lineage par lin -> lin
     NoParent -> b.playerid
+    UnknownParent -> b.playerid
   , name = Nothing
   , serverId = 0
   , epoch = 0
@@ -373,6 +382,7 @@ rawDeath d =
   , birthPopulation = d.deathPopulation
   , gender = d.gender
   , chain = 0
+  , parent = UnknownParent
   , lineage = d.playerid
   , name = Nothing
   , serverId = 0

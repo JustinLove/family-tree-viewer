@@ -23,17 +23,24 @@ let viz = new Viz({ workerURL });
 
 if (app.ports.renderGraphviz) {
   app.ports.renderGraphviz.subscribe(function(text) {
-    return viz.renderSVGElement(text).then(function(element) {
-      document.getElementById('graph').appendChild(element)
-      svgPanZoom(element, {
-        zoomEnabled: true,
-        controlIconsEnabled: true,
-        fit: true,
-        center: true,
-        maxZoom: 100.0,
-        minZoom: 0.5
+    return viz.renderSVGElement(text)
+      .then(function(element) {
+        document.getElementById('graph').appendChild(element)
+        svgPanZoom(element, {
+          zoomEnabled: true,
+          controlIconsEnabled: true,
+          fit: true,
+          center: true,
+          maxZoom: 100.0,
+          minZoom: 0.5
+        })
       })
-    })
+      .catch(function(error) {
+        // Possibly display the error
+        console.error('error', error);
+        // Create a new Viz instance (@see Caveats page for more info)
+        viz = new Viz({ workerURL });
+      });
   })
 }
 
