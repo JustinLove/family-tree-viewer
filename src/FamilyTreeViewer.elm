@@ -114,8 +114,9 @@ update msg model =
       {model | serverList = Data list}
         |> changeRouteTo model.location
     ServerList (Err error) ->
-      let _ = Debug.log "fetch servers failed" error in
-      ( {model | serverList = Failed error}, Cmd.none)
+      ( {model | serverList = Failed error}
+      , Log.httpError ("fetch servers failed ") error
+      )
     DataLayer serverId_ date_ (Ok lifeLogDay) ->
       lifeDataUpdated (LifeDataLayer.livesReceived lifeLogDay model.dataLayer) model
     DataLayer serverId date (Err error) ->
@@ -148,12 +149,14 @@ changeRouteTo location model =
   in
     case (mserverId, mbirthTime, mplayerid) of
       (Just serverId, Just birthTime, Just playerid) ->
+        let time = Time.millisToPosix (birthTime * 1000) in
         { model
         | location = location
         , mode = Display
         , graphText = Loading
+        , timeRange = Just (relativeStartTime 72 time, time)
         }
-          |>  fetchLineage serverId playerid (Time.millisToPosix (birthTime * 1000))
+          |>  fetchLineage serverId playerid time
       _ ->
         case location.fragment of
           Just frag ->
@@ -191,7 +194,7 @@ livesToGraphViz lives =
       |> List.map lifeToGraphviz
       |> String.concat
   in
-    "digraph G {" ++ lines ++ "}" |> Debug.log "graph"
+    "digraph G {" ++ lines ++ "}"
 
 lifeToGraphviz : Parse.Life -> String
 lifeToGraphviz life =
@@ -369,7 +372,10 @@ parseNames =
 lifeDataUpdated : LifeDataLayer.LifeDataLayer -> Model -> (Model, Cmd Msg)
 lifeDataUpdated unresolvedDataLayer model =
   let
-    dataLayer = LifeDataLayer.resolveLivesIfLoaded (Time.millisToPosix 0) unresolvedDataLayer
+    defaultTime = model.timeRange
+      |> Maybe.map Tuple.second
+      |> Maybe.withDefault (Time.millisToPosix 0)
+    dataLayer = LifeDataLayer.resolveLivesIfLoaded defaultTime unresolvedDataLayer
     -- a lineage query may have discovered that the currently loaded data still has possible ancestors/children beyond the loaded data, and needed to expand the range
     neededDates = LifeDataLayer.neededDates dataLayer
   in

@@ -258,9 +258,9 @@ queryLineageOfLife serverId playerid startTime dataWithUnknownDisplay =
         potentialStartPosix = potentialStart |> Time.millisToPosix
         potentialEndPosix = potentialEnd |> Time.millisToPosix
       in
-        update serverId potentialStartPosix potentialEndPosix 14 data
+        update serverId potentialStartPosix potentialEndPosix 30 data
     Nothing ->
-      update serverId startTime startTime 14 data
+      update serverId startTime startTime 30 data
 
 update : Int -> Posix -> Posix -> Int -> LifeDataLayer -> LifeDataLayer
 update serverId startTime endTime maxLogs data =

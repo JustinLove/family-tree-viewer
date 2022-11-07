@@ -11,6 +11,7 @@
     - x server name param
       - x query from ohol link
 - x graphviz render
+- exceed maxlogs collapses time window and starts over
 - ui update
   - time
   - server
@@ -23,6 +24,8 @@
   - killer nodes
   - ruby etc
 - life mapping for render?
+- thread max logs
+  - different for query vs. lineage?
 - possible cloudfront to get life data
   - need servers.json
 
