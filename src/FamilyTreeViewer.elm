@@ -135,28 +135,28 @@ update msg model =
 changeRouteTo : Url -> Model -> (Model, Cmd Msg)
 changeRouteTo location model =
   let
-    mserverId = extractHashArgument "server_id" location
-    mepoch = extractHashArgument "epoch" location
+    --mserverId = extractHashArgument "server_id" location
+    mserverId = Just 17
+    mbirthTime = extractHashArgument "start_time" location
     mplayerid = extractHashArgument "playerid" location
   in
-    case (mserverId, mepoch, mplayerid) of
-      (Just serverId, Just epoch, Just playerid) ->
-        ( { model
-          | location = location
-          , mode = Display
-          , graphText = Loading
-          }
-        , fetchFamilyTree serverId epoch playerid
-        )
+    case (mserverId, mbirthTime, mplayerid) of
+      (Just serverId, Just birthTime, Just playerid) ->
+        { model
+        | location = location
+        , mode = Display
+        , graphText = Loading
+        }
+          |>  fetchLineage serverId playerid (Time.millisToPosix (birthTime * 1000))
       _ ->
         case location.fragment of
           Just frag ->
             ( { model
               | location = location
-              , mode = Display
-              , graphText = Loading
+              , mode = Query
+              , graphText = Failed (Http.BadUrl (Url.toString location))
               }
-            , fetchFamilyTreeBlob frag
+            , Cmd.none
             )
           Nothing ->
             ( { model | location = location, mode = Query }, Cmd.none)
@@ -189,6 +189,13 @@ fetchLivesAroundTime startTime endTime model =
     --server = (model.selectedServer |> Maybe.withDefault 17)
     server = 17
     updated = LifeDataLayer.queryAroundTime server startTime endTime 7 model.dataLayer
+  in
+    fetchFilesForDataLayerIfNeeded updated model
+
+fetchLineage : Int -> Int -> Posix -> Model -> (Model, Cmd Msg)
+fetchLineage server playerid birthTime model =
+  let
+    updated = LifeDataLayer.queryLineageOfLife server playerid birthTime model.dataLayer
   in
     fetchFilesForDataLayerIfNeeded updated model
 
@@ -349,24 +356,6 @@ ignoreNotFound result =
   case result of
     Err (Http.BadStatus _) -> Ok ""
     _ -> result
-
-fetchFamilyTree : Int -> Int -> Int -> Cmd Msg
-fetchFamilyTree serverId epoch playerid =
-  Http.get
-    { url = Url.crossOrigin Config.treeServer ["family_trees"]
-      [ Url.int "server_id" serverId
-      , Url.int "epoch" epoch
-      , Url.int "playerid" playerid
-      ]
-    , expect = Http.expectString GraphText
-    }
-
-fetchFamilyTreeBlob : String -> Cmd Msg
-fetchFamilyTreeBlob query =
-  Http.get
-    { url = Url.crossOrigin Config.treeServer ["family_trees?" ++ query] []
-    , expect = Http.expectString GraphText
-    }
 
 queryUrl : Url -> String
 queryUrl location =

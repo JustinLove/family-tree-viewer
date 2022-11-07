@@ -3,10 +3,13 @@
   - x fetch logs
   - x display results
   - x apply search?
-  - lineage query
+  - x lineage query
   - select a result
   - query from search link
   - query from ohol link
+  - server list
+    - server name param
+    - hardcoded bigserver
   - upate search on typing
 - graphviz render
 - ui update
@@ -15,6 +18,7 @@
 - elm render
   https://package.elm-lang.org/packages/shamansir/elm-graph-render/
   https://package.elm-lang.org/packages/goyalarchit/elm-dagre/
+- possible cloudfront to get life data
 
 - ParseLive concerns
   - Life, Parent in OHOLData
