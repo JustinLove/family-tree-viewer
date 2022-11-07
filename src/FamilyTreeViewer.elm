@@ -49,7 +49,6 @@ type alias Life =
   , playerid : Int
   , name : Maybe String
   , serverId : Int
-  , epoch : Int
   , age : Float
   }
 
@@ -135,8 +134,7 @@ update msg model =
 changeRouteTo : Url -> Model -> (Model, Cmd Msg)
 changeRouteTo location model =
   let
-    --mserverId = extractHashArgument "server_id" location
-    mserverId = Just 17
+    mserverId = extractHashArgument "server_id" location
     mbirthTime = extractHashArgument "start_time" location
     mplayerid = extractHashArgument "playerid" location
   in
@@ -172,7 +170,6 @@ myLife life =
   , playerid = life.playerid
   , name = life.name
   , serverId = life.serverId
-  , epoch = life.epoch
   , age = life.age |> Maybe.withDefault 0.0
   }
 

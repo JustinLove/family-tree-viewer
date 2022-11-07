@@ -123,7 +123,7 @@ showMatchingLives model lives =
         , width = px 300
         , view = \life ->
           link []
-            { url = displayUrl model.location life.serverId life.epoch life.playerid
+            { url = displayUrl model.location life.serverId life.birthTime life.playerid
             , label = 
               life.name
               |> Maybe.withDefault "nameless"
@@ -155,13 +155,13 @@ showMatchingLives model lives =
       ]
     }
 
-displayUrl : Url -> Int -> Int -> Int -> String
-displayUrl location serverId epoch playerid =
+displayUrl : Url -> Int -> Posix -> Int -> String
+displayUrl location serverId startTime playerid =
   { location
   | fragment =
     Url.toQuery
       [ Url.int "server_id" serverId
-      , Url.int "epoch" epoch
+      , Url.int "start_time" ((Time.posixToMillis startTime) // 1000)
       , Url.int "playerid" playerid
       ]
       |> String.dropLeft 1
