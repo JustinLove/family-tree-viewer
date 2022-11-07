@@ -4,6 +4,7 @@ import Config
 import LifeDataLayer
 import LifeSearch
 import Log
+import OHOLData.Decode as Decode
 import OHOLData.ParseLives as Parse
 import RemoteData exposing (RemoteData(..))
 import View exposing (Mode(..))
@@ -24,6 +25,7 @@ import Url.Parser.Query
 
 type Msg
   = UI View.Msg
+  | ServerList (Result Http.Error (List Decode.Server))
   | GraphText (Result Http.Error String)
   | DataLayer Int Date (Result Http.Error LifeDataLayer.LifeLogDay)
   | CurrentZone Time.Zone
@@ -33,6 +35,7 @@ type Msg
 
 type alias Model =
   { searchTerm : String
+  , serverList : RemoteData (List Server)
   , dataLayer : LifeDataLayer.LifeDataLayer
   , lifeSearch : LifeSearch.LifeSearch Life
   , graphText : RemoteData String
@@ -52,6 +55,8 @@ type alias Life =
   , age : Float
   }
 
+type alias Server = Decode.Server
+
 main = Browser.application
   { init = init
   , update = update
@@ -66,6 +71,7 @@ init _ location key =
   let
     initialModel =
       { searchTerm = ""
+      , serverList = NotRequested
       , dataLayer = LifeDataLayer.empty
       , lifeSearch = LifeSearch.empty
       , graphText = NotRequested
@@ -75,11 +81,10 @@ init _ location key =
       , location = location
       , navigationKey = key
       }
-    (model, cmd) = changeRouteTo location initialModel
   in
-    ( model
+    ( initialModel
     , Cmd.batch
-      [ cmd
+      [ fetchServers
       , Time.here |> Task.perform CurrentZone
       , Time.now |> Task.perform CurrentTime
       ]
@@ -106,6 +111,12 @@ update msg model =
       , Navigation.pushUrl model.navigationKey <|
           queryUrl model.location
       )
+    ServerList (Ok list) ->
+      {model | serverList = Data list}
+        |> changeRouteTo model.location
+    ServerList (Err error) ->
+      let _ = Debug.log "fetch servers failed" error in
+      ( {model | serverList = Failed error}, Cmd.none)
     GraphText (Ok text) ->
       ( {model | graphText = Data text}, Viz.renderGraphviz text)
     GraphText (Err error) ->
@@ -134,9 +145,12 @@ update msg model =
 changeRouteTo : Url -> Model -> (Model, Cmd Msg)
 changeRouteTo location model =
   let
-    mserverId = extractHashArgument "server_id" location
-    mbirthTime = extractHashArgument "start_time" location
-    mplayerid = extractHashArgument "playerid" location
+    mserverName = extractHashStringArgument "server_name" location
+    mserverId = case extractHashIntArgument "server_id" location of
+      Just id -> Just id
+      Nothing -> Maybe.map (idForServer model) mserverName
+    mbirthTime = extractHashIntArgument "start_time" location
+    mplayerid = extractHashIntArgument "playerid" location
   in
     case (mserverId, mbirthTime, mplayerid) of
       (Just serverId, Just birthTime, Just playerid) ->
@@ -172,6 +186,28 @@ myLife life =
   , serverId = life.serverId
   , age = life.age |> Maybe.withDefault 0.0
   }
+
+fetchServers : Cmd Msg
+fetchServers =
+  Http.get
+    { url = Url.relative ["data/servers.json"] []
+    , expect = Http.expectJson ServerList Decode.servers
+    }
+
+defaultServerName = "bigserver2.onehouronelife.com"
+defaultServerId = 17
+
+nameForServer : Model -> Int -> String
+nameForServer model serverId =
+  model.serverList
+    |> RemoteData.map (List.foldl (\s name -> if s.id == serverId then s.serverName else name) defaultServerName)
+    |> RemoteData.withDefault defaultServerName
+
+idForServer : Model -> String -> Int
+idForServer model serverName =
+  model.serverList
+    |> RemoteData.map (List.foldl (\s id -> if s.serverName == serverName then s.id else id) defaultServerId)
+    |> RemoteData.withDefault defaultServerId
 
 relativeStartTime : Int -> Posix -> Posix
 relativeStartTime hoursPeriod time =
@@ -216,8 +252,7 @@ fetchFilesForDataLayer neededDates updated model =
   , neededDates
     |> List.map (fetchDataLayerFile publicLifeLogData
         (updated.serverId)
-        --(nameForServer model updated.serverId)
-        "bigserver2.onehouronelife.com"
+        (nameForServer model updated.serverId)
       )
     |> Cmd.batch
   )
@@ -364,8 +399,14 @@ parseLives =
     (Parser.run Parse.dbLives
       >> Result.mapError (Http.BadBody << Parse.deadEndsToString))
 
-extractHashArgument : String -> Url -> Maybe Int
-extractHashArgument key location =
+extractHashIntArgument : String -> Url -> Maybe Int
+extractHashIntArgument key location =
   { location | path = "", query = location.fragment }
     |> Url.Parser.parse (Url.Parser.query (Url.Parser.Query.int key))
+    |> Maybe.withDefault Nothing
+
+extractHashStringArgument : String -> Url -> Maybe String
+extractHashStringArgument key location =
+  { location | path = "", query = location.fragment }
+    |> Url.Parser.parse (Url.Parser.query (Url.Parser.Query.string key))
     |> Maybe.withDefault Nothing

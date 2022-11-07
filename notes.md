@@ -6,10 +6,10 @@
   - x lineage query
   - x select a result
   - x query from search link
-  - server list
-    - server name param
-      - query from ohol link
-    - hardcoded bigserver
+  - x server list
+    - x hardcoded bigserver
+    - x server name param
+      - x query from ohol link
 - graphviz render
 - ui update
   - time
@@ -19,6 +19,7 @@
   https://package.elm-lang.org/packages/shamansir/elm-graph-render/
   https://package.elm-lang.org/packages/goyalarchit/elm-dagre/
 - possible cloudfront to get life data
+  - need servers.json
 
 - ParseLive concerns
   - Life, Parent in OHOLData
