@@ -11,7 +11,8 @@
     - x server name param
       - x query from ohol link
 - x graphviz render
-- exceed maxlogs collapses time window and starts over
+- x exceed maxlogs collapses time window and starts over
+- test draw fail
 - ui update
   - time
   - server

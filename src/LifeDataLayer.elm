@@ -142,7 +142,7 @@ expandingQuery : Posix -> LifeDataLayer -> LifeDataLayer
 expandingQuery defaultTime data =
   case data.displayFilter of
     DisplayLineageOf playerid ->
-      queryLineageOfLife data.serverId playerid defaultTime data
+      expandingQueryLineageOfLife data.serverId playerid defaultTime data
     _ ->
       data
 
@@ -227,46 +227,66 @@ isDisplayingSingleLineage data =
 
 queryAroundTime : Int -> Posix -> Posix -> Int -> LifeDataLayer -> LifeDataLayer
 queryAroundTime serverId startTime endTime maxLogs data =
-  update serverId startTime endTime maxLogs data
+  updateAndDrop serverId startTime endTime maxLogs data
     |> displayAll
 
 queryExactTime : Int -> Posix -> Posix -> Int -> LifeDataLayer -> LifeDataLayer
 queryExactTime serverId startTime endTime maxLogs data =
-  update serverId startTime endTime maxLogs data
+  updateAndDrop serverId startTime endTime maxLogs data
     |> displayRange startTime endTime
 
 oneHour = 60 * 60 * 1000
 
+oneHourAround : (Posix, Posix) -> (Posix, Posix)
+oneHourAround (start, end) =
+  ( Time.millisToPosix ((Time.posixToMillis start) - oneHour)
+  , Time.millisToPosix ((Time.posixToMillis end) + oneHour)
+  )
+
 queryLineageOfLife : Int -> Int -> Posix -> LifeDataLayer -> LifeDataLayer
 queryLineageOfLife serverId playerid startTime dataWithUnknownDisplay =
-  let data = displayLineageOf playerid dataWithUnknownDisplay in
-  case eventRange startTime data of
-    Just (dataStart, dataEnd) ->
-      let
-        startMs = startTime |> Time.posixToMillis
-        lineageBirthTimes = data.lives
-          |> RemoteData.withDefault []
-          |> List.map (.birthTime>>Time.posixToMillis)
-        firstBirth = List.minimum lineageBirthTimes
-          |> Maybe.withDefault startMs
-        lastBirth = List.maximum lineageBirthTimes
-          |> Maybe.withDefault startMs
-        dataStartMs = Time.posixToMillis dataStart
-        dataEndMs = Time.posixToMillis dataEnd
-        potentialStart = firstBirth - oneHour
-        potentialEnd = lastBirth + oneHour
-        potentialStartPosix = potentialStart |> Time.millisToPosix
-        potentialEndPosix = potentialEnd |> Time.millisToPosix
-      in
-        update serverId potentialStartPosix potentialEndPosix 30 data
-    Nothing ->
-      update serverId startTime startTime 30 data
+  let
+    data = displayLineageOf playerid dataWithUnknownDisplay
+    (start, end) = eventRange startTime data
+      |> Maybe.map oneHourAround
+      |> Maybe.withDefault (startTime, startTime)
+  in
+    updateUnlimited serverId start end data
 
-update : Int -> Posix -> Posix -> Int -> LifeDataLayer -> LifeDataLayer
-update serverId startTime endTime maxLogs data =
+expandingQueryLineageOfLife : Int -> Int -> Posix -> LifeDataLayer -> LifeDataLayer
+expandingQueryLineageOfLife serverId playerid startTime dataWithUnknownDisplay =
+  let
+    data = displayLineageOf playerid dataWithUnknownDisplay
+    mrange = eventRange startTime data
+      |> Maybe.map oneHourAround
+  in
+    case mrange of
+      Just (start, end) -> updateUnlimited serverId start end data
+      Nothing -> data
+
+updateAndDrop : Int -> Posix -> Posix -> Int -> LifeDataLayer -> LifeDataLayer
+updateAndDrop serverId startTime endTime maxLogs data =
   let
     newDates = allPossibleLifelogsRequired startTime endTime
       |> limit maxLogs
+    relevantLogs = data.logs
+      |> List.filter (logIsOnServer serverId)
+      |> List.filter (logIsInDates newDates)
+    relevantDates = relevantLogs
+      |> List.map Tuple.first
+    missingLogs = newDates
+      |> List.filter (\date -> not <| List.member date relevantDates)
+      |> List.map (\date -> (date, NotRequested))
+  in
+    { data
+    | serverId = serverId
+    , logs = List.append relevantLogs missingLogs
+    }
+
+updateUnlimited : Int -> Posix -> Posix -> LifeDataLayer -> LifeDataLayer
+updateUnlimited serverId startTime endTime data =
+  let
+    newDates = allPossibleLifelogsRequired startTime endTime
     relevantLogs = data.logs
       |> List.filter (logIsOnServer serverId)
       |> List.filter (logIsInDates newDates)
@@ -321,6 +341,7 @@ eventRange : Posix -> LifeDataLayer -> Maybe (Posix, Posix)
 eventRange defaultTime data =
   data.lives
     |> RemoteData.toMaybe
+    |> Maybe.andThen (\lives -> if List.isEmpty lives then Nothing else Just lives)
     |> Maybe.map (eventRangeOfLives defaultTime)
 
 eventRangeOfLives : Posix -> List Parse.Life -> (Posix, Posix)
