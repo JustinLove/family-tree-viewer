@@ -1,10 +1,12 @@
 module View exposing (Msg(..), Mode(..), view, document)
 
+import OHOLData.Decode as Decode exposing (Server)
 import RemoteData exposing (RemoteData(..))
 
 import Browser
 import Element exposing (..)
 import Element.Background as Background
+import Element.Border as Border
 import Element.Events as Events
 import Element.Font as Font
 import Element.Input as Input
@@ -24,6 +26,7 @@ import Url.Builder as Url
 type Msg
   = None
   | Search String
+  | SelectServer Int
   | Back
 
 type Mode
@@ -50,6 +53,7 @@ view model =
 query model =
   column [ height fill, width fill ]
     [ searchBox model.lifeSearch.results
+    , serverSelect model.serverList model.selectedServer
     , showResult model model.lifeSearch.results
     ]
 
@@ -231,6 +235,67 @@ searchBox request =
           ] []
         ]
 
+serverSelect : RemoteData (List Server) -> Maybe Int -> Element Msg
+serverSelect servers serverId =
+    Input.radioRow [ padding 10, spacing 2, htmlAttribute (Html.Attributes.class "server-select") ]
+      { onChange = SelectServer
+      , selected = serverId
+      , label = Input.labelAbove [] (text "Server")
+      , options = servers |> RemoteData.withDefault [] |> List.map serverItem
+      }
+
+serverItem : Server -> Input.Option Int Msg
+serverItem server =
+  Input.optionWith server.id
+    (serverIcon server)
+
+serverDisplayName : String -> String
+serverDisplayName serverName =
+  serverName
+    |> String.split "."
+    |> List.head
+    |> Maybe.withDefault serverName
+
+serverIcon : Server -> Input.OptionState -> Element Msg
+serverIcon server =
+  serverIconForName server.serverName
+
+serverIconForName : String -> Input.OptionState -> Element Msg
+serverIconForName serverName status =
+  let
+    name = serverDisplayName serverName
+  in
+  el [ htmlAttribute (Html.Attributes.title serverName) ] <|
+  if String.startsWith "server" name then
+    let
+      number = String.replace "server" "" name
+    in
+      el
+        [ width (px 30)
+        , padding 3
+        , Border.width 1
+        , Border.color foreground
+        , Border.rounded 8
+        , Background.color (if status == Input.Selected then selected else control)
+        ]
+        (el [ centerX ] (text number))
+  else if String.startsWith "bigserver" name then
+    let
+      number = String.replace "bigserver" "" name
+    in
+      el
+        [ width (px 30)
+        , Border.width 4
+        , Border.color foreground
+        , Border.rounded 8
+        , Font.heavy
+        , Font.color (if status == Input.Selected then background else foreground)
+        , Background.color (if status == Input.Selected then selected else control)
+        ]
+        (el [ centerX ] (text number))
+  else
+    text name
+
 displayFooter : Element msg
 displayFooter =
   row
@@ -275,3 +340,5 @@ scaled height = modular (max ((toFloat height)/30) 15) 1.25 >> round
 foreground = rgb 0.9 0.9 0.9
 background = rgb 0.1 0.1 0.1
 white = rgb 1 1 1
+selected = rgb 0.23 0.6 0.98
+control = rgb 0.2 0.2 0.2

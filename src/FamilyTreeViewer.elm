@@ -34,6 +34,7 @@ type Msg
 
 type alias Model =
   { searchTerm : String
+  , selectedServer : Maybe Int
   , serverList : RemoteData (List Server)
   , dataLayer : LifeDataLayer.LifeDataLayer
   , lifeSearch : LifeSearch.LifeSearch Life
@@ -70,6 +71,7 @@ init _ location key =
   let
     initialModel =
       { searchTerm = ""
+      , selectedServer = Nothing
       , serverList = NotRequested
       , dataLayer = LifeDataLayer.empty
       , lifeSearch = LifeSearch.empty
@@ -105,13 +107,28 @@ update msg model =
         case model.timeRange of
           Just (start,end) -> fetchLivesAroundTime start end m2
           Nothing -> (m2, Cmd.none)
+    UI (View.SelectServer serverId) ->
+      ({model | selectedServer = Just serverId}, Cmd.none)
     UI View.Back ->
       ( model
       , Navigation.pushUrl model.navigationKey <|
           queryUrl model.location
       )
     ServerList (Ok list) ->
-      {model | serverList = Data list}
+      let
+        current = case model.selectedServer of
+          Just sid ->
+            list
+              |> List.filter (\s -> s.id == sid)
+              |> List.head
+              |> Maybe.map .id
+          Nothing ->
+            list
+              |> List.filter (\s -> s.serverName == "bigserver2.onehouronelife.com")
+              |> List.head
+              |> Maybe.map .id
+      in
+      {model | serverList = Data list, selectedServer = current}
         |> changeRouteTo model.location
     ServerList (Err error) ->
       ( {model | serverList = Failed error}
@@ -152,6 +169,7 @@ changeRouteTo location model =
         let time = Time.millisToPosix (birthTime * 1000) in
         { model
         | location = location
+        , selectedServer = mserverId
         , mode = Display
         , graphText = Loading
         , timeRange = Just (relativeStartTime 72 time, time)
@@ -243,8 +261,7 @@ relativeStartTime hoursPeriod time =
 fetchLivesAroundTime : Posix -> Posix -> Model -> (Model, Cmd Msg)
 fetchLivesAroundTime startTime endTime model =
   let
-    --server = (model.selectedServer |> Maybe.withDefault 17)
-    server = 17
+    server = (model.selectedServer |> Maybe.withDefault defaultServerId)
     updated = LifeDataLayer.queryAroundTime server startTime endTime 7 model.dataLayer
   in
     fetchFilesForDataLayerIfNeeded updated model
@@ -386,19 +403,29 @@ lifeDataUpdated unresolvedDataLayer model =
 
 lifeDataUpdateComplete : LifeDataLayer.LifeDataLayer -> Model -> (Model, Cmd Msg)
 lifeDataUpdateComplete dataLayer model =
-  let
-    (lifeSearch, _) = LifeSearch.updateData myLife dataLayer.lives model.lifeSearch
-    graphText = RemoteData.map livesToGraphViz dataLayer.lives
-  in
-  ( { model
-    | dataLayer = dataLayer
-    , lifeSearch = lifeSearch
-    , graphText = graphText
-    }
-  , graphText
-    |> RemoteData.map Viz.renderGraphviz
-    |> RemoteData.withDefault Cmd.none
-  )
+  case model.mode of
+    Query ->
+      let
+        (lifeSearch, _) = LifeSearch.updateData myLife dataLayer.lives model.lifeSearch
+      in
+      ( { model
+        | dataLayer = dataLayer
+        , lifeSearch = lifeSearch
+        }
+      , Cmd.none
+      )
+    Display ->
+      let
+        graphText = RemoteData.map livesToGraphViz dataLayer.lives
+      in
+      ( { model
+        | dataLayer = dataLayer
+        , graphText = graphText
+        }
+      , graphText
+        |> RemoteData.map Viz.renderGraphviz
+        |> RemoteData.withDefault Cmd.none
+      )
 
 resolveStringResponse : Http.Response String -> Result Http.Error String
 resolveStringResponse response =

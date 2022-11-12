@@ -12,10 +12,9 @@
       - x query from ohol link
 - x graphviz render
 - x exceed maxlogs collapses time window and starts over
-- test draw fail
 - ui update
   - time
-  - server
+  - x server
   - update search on typing
 - elm render
   https://package.elm-lang.org/packages/shamansir/elm-graph-render/
