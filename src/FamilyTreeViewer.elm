@@ -208,8 +208,8 @@ update msg model =
 
 dateInitialvalue : PickerDate.Date -> PickerDate.Date -> DateModel -> DateModel
 dateInitialvalue selectedDate today dateModel =
-  { dateModel
-  | date = Just selectedDate
+  { date = Just selectedDate
+  , text = PickerDate.toIsoString selectedDate
   , picker = DatePicker.setToday today dateModel.picker
   }
 

@@ -15,7 +15,7 @@
 - ui update
   - x server
   - time
-    - update default date strings
+    - x update default date strings
     - x colors etc
     - https://package.elm-lang.org/packages/PanagiotisGeorgiadis/elm-datepicker/latest/
     - https://package.elm-lang.org/packages/dwyl/elm-datepicker/latest/
