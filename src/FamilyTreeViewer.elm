@@ -130,6 +130,16 @@ update msg model =
         case currentTimeRange model of
           Just (start,end) -> fetchLivesAroundTime start end m2
           Nothing -> (m2, Cmd.none)
+    UI (View.SearchTyping term) ->
+      let
+        (lifeSearch, _) = LifeSearch.updateTerm myLife term model.lifeSearch
+        m2 =
+          { model
+          | searchTerm = term
+          , lifeSearch = lifeSearch
+          }
+      in
+        (m2, Cmd.none)
     UI (View.SelectServer serverId) ->
       ({model | selectedServer = Just serverId}, Cmd.none)
     UI (View.StartDateChange changeEvent) ->

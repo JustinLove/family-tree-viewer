@@ -27,6 +27,7 @@ import Url.Builder as Url
 type Msg
   = None
   | Search String
+  | SearchTyping String
   | SelectServer Int
   | StartDateChange DatePicker.ChangeEvent
   | EndDateChange DatePicker.ChangeEvent
@@ -48,6 +49,7 @@ view model =
     [ Font.color foreground
     , Background.color background
     , inFront displayFooter
+    , width fill
     ] <|
     case model.mode of
       Query -> query model
@@ -55,7 +57,7 @@ view model =
 
 query model =
   column [ height fill, width fill ]
-    [ searchBox model.lifeSearch.results
+    [ searchBox model.searchTerm model.lifeSearch.results
     , serverSelect model.serverList model.selectedServer
     , dateSelect StartDateChange "Start Date" model.startDateModel
     , dateSelect EndDateChange "End Date" model.endDateModel
@@ -209,8 +211,8 @@ display model =
     [ width fill
     , height fill
     ]
-    [ row [ spacing 10 ]
-      [ searchBox model.lifeSearch.results
+    [ row [ spacing 10, width fill ]
+      [ searchBox model.searchTerm model.lifeSearch.results
       , Input.button []
         { onPress = Just Back
         , label = text "Back"
@@ -222,23 +224,21 @@ display model =
       <| Html.Keyed.node "div" [] [("graph", Html.div [Html.Attributes.id "graph"] []) ]
     ]
 
-searchBox : RemoteData a -> Element Msg
-searchBox request =
-  el [ padding 2 ] <|
-    html <|
-      Html.div [ Html.Attributes.class "search" ]
-        [ Html.label [ Html.Attributes.for "search" ]
-          [ Html.text "Character Name or Hash" ]
-        , Html.text " "
-        , Html.input
-          [ Html.Attributes.type_ "search"
-          , Html.Attributes.size 42
-          , Html.Attributes.id "search"
-          , Html.Attributes.name "search"
-          , Html.Attributes.disabled (request == Loading)
-          , on "change" <| targetValue Json.Decode.string Search
-          ] []
-        ]
+searchBox : String -> RemoteData a -> Element Msg
+searchBox searchTerm request =
+  -- TODO: loading
+  el [ padding 2, width fill ] <|
+    Input.search
+      [ htmlAttribute <| on "change" <| targetValue Json.Decode.string Search
+      , padding 2
+      , Background.color input
+      , width (px 400)
+      ]
+      { onChange = SearchTyping
+      , text = searchTerm
+      , placeholder = Nothing
+      , label = Input.labelLeft [] (text "Character Name or Hash")
+      }
 
 serverSelect : RemoteData (List Server) -> Maybe Int -> Element Msg
 serverSelect servers serverId =
@@ -302,7 +302,11 @@ serverIconForName serverName status =
     text name
 
 dateSelect msg label model =
-  DatePicker.input [ width (fill |> maximum 400) ]
+  DatePicker.input
+    [ width (fill |> maximum 400)
+    , padding 2
+    , Background.color input
+    ]
     { onChange = msg
     , selected = model.date
     , text = model.text
@@ -385,3 +389,4 @@ background = rgb 0.1 0.1 0.1
 white = rgb 1 1 1
 selected = rgb 0.23 0.6 0.98
 control = rgb 0.2 0.2 0.2
+input = rgb 0 0 0

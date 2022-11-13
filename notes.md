@@ -15,11 +15,14 @@
 - ui update
   - x server
   - time
+    - update default date strings
+    - x colors etc
     - https://package.elm-lang.org/packages/PanagiotisGeorgiadis/elm-datepicker/latest/
     - https://package.elm-lang.org/packages/dwyl/elm-datepicker/latest/
     - https://package.elm-lang.org/packages/n1k0/elm-daterange-picker/latest/
     - https://package.elm-lang.org/packages/fabhof/elm-ui-datepicker/latest/
-  - update search on typing
+  - x update search on typing
+  - loading feedback
 - elm render
   https://package.elm-lang.org/packages/shamansir/elm-graph-render/
   https://package.elm-lang.org/packages/goyalarchit/elm-dagre/
