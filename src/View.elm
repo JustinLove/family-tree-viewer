@@ -29,6 +29,7 @@ type Msg
   | Search String
   | SelectServer Int
   | StartDateChange DatePicker.ChangeEvent
+  | EndDateChange DatePicker.ChangeEvent
   | Back
 
 type Mode
@@ -56,7 +57,8 @@ query model =
   column [ height fill, width fill ]
     [ searchBox model.lifeSearch.results
     , serverSelect model.serverList model.selectedServer
-    , dateSelect model
+    , dateSelect StartDateChange "Start Date" model.startDateModel
+    , dateSelect EndDateChange "End Date" model.endDateModel
     , showResult model model.lifeSearch.results
     ]
 
@@ -299,18 +301,17 @@ serverIconForName serverName status =
   else
     text name
 
---dateSelect : Model
-dateSelect model =
+dateSelect msg label model =
   DatePicker.input [ width (fill |> maximum 400) ]
-    { onChange = StartDateChange
-    , selected = model.startDate
-    , text = model.startText
+    { onChange = msg
+    , selected = model.date
+    , text = model.text
     , label =
         Input.labelAbove [] <|
-            Element.text "Start Date"
+            Element.text label
     , placeholder = Nothing
     , settings = pickerSettings
-    , model = model.startPicker
+    , model = model.picker
     }
 
 defaultPickerSettings = DatePicker.defaultSettings  

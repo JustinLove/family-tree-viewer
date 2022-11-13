@@ -44,13 +44,17 @@ type alias Model =
   , graphText : RemoteData String
   , mode : Mode
   , timeRange : Maybe (Posix, Posix)
-  , startDate : Maybe PickerDate.Date
-  , startText : String
-  , endDate : Maybe PickerDate.Date
-  , startPicker : DatePicker.Model
+  , startDateModel : DateModel
+  , endDateModel : DateModel
   , zone : Time.Zone
   , location : Url
   , navigationKey : Navigation.Key
+  }
+
+type alias DateModel =
+  { date : Maybe PickerDate.Date
+  , text : String
+  , picker : DatePicker.Model
   }
 
 type alias Life =
@@ -87,10 +91,8 @@ init _ location key =
       , graphText = NotRequested
       , mode = Query
       , timeRange = Nothing
-      , startDate = Nothing
-      , startText = ""
-      , endDate = Nothing
-      , startPicker = DatePicker.init
+      , startDateModel = dateInit
+      , endDateModel = dateInit
       , zone = Time.utc
       , location = location
       , navigationKey = key
@@ -104,6 +106,13 @@ init _ location key =
       , PickerDate.today |> Task.perform CurrentDay
       ]
     )
+
+dateInit : DateModel
+dateInit =
+  { date = Nothing
+  , text = ""
+  , picker = DatePicker.init
+  }
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
@@ -124,33 +133,17 @@ update msg model =
     UI (View.SelectServer serverId) ->
       ({model | selectedServer = Just serverId}, Cmd.none)
     UI (View.StartDateChange changeEvent) ->
-      case changeEvent of
-        DatePicker.DateChanged date ->
-          ( { model
-            | startDate = Just date
-            , startText = PickerDate.toIsoString date
-            }
-            , Cmd.none
-          )
-
-        DatePicker.TextChanged text ->
-          ( { model
-            | startDate = case PickerDate.fromIsoString text |> Result.toMaybe of
-              Just date -> Just date
-              Nothing -> model.startDate
-            , startText = text
-            }
-          , Cmd.none
-          )
-
-        DatePicker.PickerChanged subMsg ->
-          ( { model
-            | startPicker =
-              model.startPicker
-              |> DatePicker.update subMsg
-            }
-            , Cmd.none
-          )
+      ( {model | startDateModel =
+          datePickerUpdate changeEvent model.startDateModel
+        }
+      , Cmd.none
+      )
+    UI (View.EndDateChange changeEvent) ->
+      ( {model | endDateModel =
+          datePickerUpdate changeEvent model.endDateModel
+        }
+      , Cmd.none
+      )
     UI View.Back ->
       ( model
       , Navigation.pushUrl model.navigationKey <|
@@ -189,9 +182,8 @@ update msg model =
       ({model | timeRange = Just (relativeStartTime 72 now, now)}, Cmd.none)
     CurrentDay today ->
       ( { model
-        | startDate = Just (PickerDate.add PickerDate.Days -3 today)
-        , endDate = Just today
-        , startPicker = model.startPicker |> DatePicker.setToday today
+        | startDateModel = dateInitialvalue (PickerDate.add PickerDate.Days -3 today) today model.startDateModel
+        , endDateModel = dateInitialvalue today today model.startDateModel
         }
       , Cmd.none
       )
@@ -204,11 +196,41 @@ update msg model =
     Navigate (Browser.External url) ->
       (model, Navigation.load url)
 
+dateInitialvalue : PickerDate.Date -> PickerDate.Date -> DateModel -> DateModel
+dateInitialvalue selectedDate today dateModel =
+  { dateModel
+  | date = Just selectedDate
+  , picker = DatePicker.setToday today dateModel.picker
+  }
+
+datePickerUpdate : DatePicker.ChangeEvent -> DateModel -> DateModel
+datePickerUpdate changeEvent model =
+  case changeEvent of
+    DatePicker.DateChanged date ->
+      { date = Just date
+      , text = PickerDate.toIsoString date
+      , picker = model.picker
+      }
+    DatePicker.TextChanged text ->
+      { date = case PickerDate.fromIsoString text |> Result.toMaybe of
+        Just date -> Just date
+        Nothing -> model.date
+      , text = text
+      , picker = model.picker
+      }
+    DatePicker.PickerChanged subMsg ->
+      { date = model.date
+      , text = model.text
+      , picker =
+        model.picker
+        |> DatePicker.update subMsg
+      }
+
 currentTimeRange : Model -> Maybe (Posix, Posix)
 currentTimeRange model =
   Maybe.map2 Tuple.pair 
-    (Maybe.map posixFromPickerDate model.startDate)
-    (Maybe.map posixFromPickerDate model.endDate)
+    (Maybe.map posixFromPickerDate model.startDateModel.date)
+    (Maybe.map posixFromPickerDate model.endDateModel.date)
 
 oneDay = 24 * 60 * 60 * 1000
 
@@ -217,7 +239,6 @@ posixFromPickerDate date =
   let
     days = PickerDate.diff PickerDate.Days unixOriginPickerDate date
     posix = Time.millisToPosix (days * oneDay)
-    _ = Debug.log "convert" (PickerDate.toIsoString date, dateYearMonthMonthDayWeekday Time.utc posix)
   in
     posix
 
