@@ -24,7 +24,8 @@
   - x update search on typing
   - x loading feedback
   - x log limits
-  - loading feedback
+  - x loading feedback
+- lineage query requires most recent missing file, never finishes
 - elm render
   https://package.elm-lang.org/packages/shamansir/elm-graph-render/
   https://package.elm-lang.org/packages/goyalarchit/elm-dagre/

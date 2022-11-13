@@ -2,6 +2,7 @@ module View exposing (Msg(..), Mode(..), view, document)
 
 import OHOLData.Decode as Decode exposing (Server)
 import RemoteData exposing (RemoteData(..))
+import LifeDataLayer
 
 import Browser
 import DatePicker
@@ -63,17 +64,17 @@ query model =
     , dateSelect StartDateChange "Start Date" model.startDateModel
     , dateSelect EndDateChange "End Date" model.endDateModel
     , dateWarning model.startDateModel.date model.endDateModel.date
-    , showResult model model.lifeSearch.results
+    , showResult model (LifeDataLayer.loadingCount model.dataLayer) model.lifeSearch.results
     ]
 
-showResult model remote =
+showResult model loading remote =
   case remote of
     NotRequested ->
       none
     NotAvailable ->
       none
     Loading ->
-      el [ centerX, centerY ] <| text "Loading"
+      el [ centerX, centerY ] <| text ("Loading " ++ (String.fromInt loading))
     Data lives ->
       showMatchingLives model lives
     Failed error ->

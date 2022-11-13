@@ -387,7 +387,11 @@ publicLifeLogData = "publicLifeLogData/lifeLog_{server}/{filename}.txt"
 
 fetchFilesForDataLayer : (List Date) -> LifeDataLayer.LifeDataLayer -> Model -> (Model, Cmd Msg)
 fetchFilesForDataLayer neededDates updated model =
-  ( { model | dataLayer = LifeDataLayer.setLoading updated }
+  let (lifeSearch, _) = LifeSearch.updateData myLife Loading model.lifeSearch  in
+  ( { model
+    | dataLayer = LifeDataLayer.setLoading updated
+    , lifeSearch = lifeSearch
+    }
   , neededDates
     |> List.map (fetchDataLayerFile publicLifeLogData
         (updated.serverId)
