@@ -4,6 +4,7 @@ import OHOLData.Decode as Decode exposing (Server)
 import RemoteData exposing (RemoteData(..))
 
 import Browser
+import DatePicker
 import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border
@@ -27,6 +28,7 @@ type Msg
   = None
   | Search String
   | SelectServer Int
+  | StartDateChange DatePicker.ChangeEvent
   | Back
 
 type Mode
@@ -54,6 +56,7 @@ query model =
   column [ height fill, width fill ]
     [ searchBox model.lifeSearch.results
     , serverSelect model.serverList model.selectedServer
+    , dateSelect model
     , showResult model model.lifeSearch.results
     ]
 
@@ -295,6 +298,45 @@ serverIconForName serverName status =
         (el [ centerX ] (text number))
   else
     text name
+
+--dateSelect : Model
+dateSelect model =
+  DatePicker.input [ width (fill |> maximum 400) ]
+    { onChange = StartDateChange
+    , selected = model.startDate
+    , text = model.startText
+    , label =
+        Input.labelAbove [] <|
+            Element.text "Start Date"
+    , placeholder = Nothing
+    , settings = pickerSettings
+    , model = model.startPicker
+    }
+
+defaultPickerSettings = DatePicker.defaultSettings  
+
+pickerSettings : DatePicker.Settings
+pickerSettings =
+  { defaultPickerSettings
+  | firstDayOfWeek = Time.Sun
+  , pickerAttributes =
+      [ Border.width 1
+      , Border.color (Element.rgb255 186 189 182)
+      , Border.roundEach
+          { topLeft = 0
+          , topRight = 0
+          , bottomLeft = 3
+          , bottomRight = 3
+          }
+      , Element.moveDown 3
+      , padding 8
+      , spacing 4
+      , Element.centerX
+      , Element.centerY
+      , Element.width Element.fill
+      , Background.color background
+      ]
+  }
 
 displayFooter : Element msg
 displayFooter =

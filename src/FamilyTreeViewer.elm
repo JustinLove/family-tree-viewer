@@ -14,6 +14,8 @@ import Browser
 import Browser.Dom
 import Browser.Navigation as Navigation
 import Calendar exposing (Date)
+import Date as PickerDate
+import DatePicker
 import Http
 import Parser.Advanced as Parser
 import Task
@@ -30,6 +32,7 @@ type Msg
   | CurrentZone Time.Zone
   | CurrentTime Posix
   | CurrentUrl Url
+  | CurrentDay PickerDate.Date
   | Navigate Browser.UrlRequest
 
 type alias Model =
@@ -41,6 +44,10 @@ type alias Model =
   , graphText : RemoteData String
   , mode : Mode
   , timeRange : Maybe (Posix, Posix)
+  , startDate : Maybe PickerDate.Date
+  , startText : String
+  , endDate : Maybe PickerDate.Date
+  , startPicker : DatePicker.Model
   , zone : Time.Zone
   , location : Url
   , navigationKey : Navigation.Key
@@ -66,6 +73,8 @@ main = Browser.application
   , onUrlChange = CurrentUrl
   }
 
+unixOriginPickerDate = PickerDate.fromCalendarDate 1970 Time.Jan 1
+
 init : () -> Url -> Navigation.Key -> (Model, Cmd Msg)
 init _ location key =
   let
@@ -78,6 +87,10 @@ init _ location key =
       , graphText = NotRequested
       , mode = Query
       , timeRange = Nothing
+      , startDate = Nothing
+      , startText = ""
+      , endDate = Nothing
+      , startPicker = DatePicker.init
       , zone = Time.utc
       , location = location
       , navigationKey = key
@@ -88,6 +101,7 @@ init _ location key =
       [ fetchServers
       , Time.here |> Task.perform CurrentZone
       , Time.now |> Task.perform CurrentTime
+      , PickerDate.today |> Task.perform CurrentDay
       ]
     )
 
@@ -104,11 +118,39 @@ update msg model =
           , lifeSearch = lifeSearch
           }
       in
-        case model.timeRange of
+        case currentTimeRange model of
           Just (start,end) -> fetchLivesAroundTime start end m2
           Nothing -> (m2, Cmd.none)
     UI (View.SelectServer serverId) ->
       ({model | selectedServer = Just serverId}, Cmd.none)
+    UI (View.StartDateChange changeEvent) ->
+      case changeEvent of
+        DatePicker.DateChanged date ->
+          ( { model
+            | startDate = Just date
+            , startText = PickerDate.toIsoString date
+            }
+            , Cmd.none
+          )
+
+        DatePicker.TextChanged text ->
+          ( { model
+            | startDate = case PickerDate.fromIsoString text |> Result.toMaybe of
+              Just date -> Just date
+              Nothing -> model.startDate
+            , startText = text
+            }
+          , Cmd.none
+          )
+
+        DatePicker.PickerChanged subMsg ->
+          ( { model
+            | startPicker =
+              model.startPicker
+              |> DatePicker.update subMsg
+            }
+            , Cmd.none
+          )
     UI View.Back ->
       ( model
       , Navigation.pushUrl model.navigationKey <|
@@ -145,6 +187,14 @@ update msg model =
       ({model | zone = zone}, Cmd.none)
     CurrentTime now ->
       ({model | timeRange = Just (relativeStartTime 72 now, now)}, Cmd.none)
+    CurrentDay today ->
+      ( { model
+        | startDate = Just (PickerDate.add PickerDate.Days -3 today)
+        , endDate = Just today
+        , startPicker = model.startPicker |> DatePicker.setToday today
+        }
+      , Cmd.none
+      )
     CurrentUrl location ->
       changeRouteTo location model
     Navigate (Browser.Internal url) ->
@@ -153,6 +203,23 @@ update msg model =
       )
     Navigate (Browser.External url) ->
       (model, Navigation.load url)
+
+currentTimeRange : Model -> Maybe (Posix, Posix)
+currentTimeRange model =
+  Maybe.map2 Tuple.pair 
+    (Maybe.map posixFromPickerDate model.startDate)
+    (Maybe.map posixFromPickerDate model.endDate)
+
+oneDay = 24 * 60 * 60 * 1000
+
+posixFromPickerDate : PickerDate.Date -> Posix
+posixFromPickerDate date =
+  let
+    days = PickerDate.diff PickerDate.Days unixOriginPickerDate date
+    posix = Time.millisToPosix (days * oneDay)
+    _ = Debug.log "convert" (PickerDate.toIsoString date, dateYearMonthMonthDayWeekday Time.utc posix)
+  in
+    posix
 
 changeRouteTo : Url -> Model -> (Model, Cmd Msg)
 changeRouteTo location model =
@@ -389,7 +456,7 @@ parseNames =
 lifeDataUpdated : LifeDataLayer.LifeDataLayer -> Model -> (Model, Cmd Msg)
 lifeDataUpdated unresolvedDataLayer model =
   let
-    defaultTime = model.timeRange
+    defaultTime = currentTimeRange model
       |> Maybe.map Tuple.second
       |> Maybe.withDefault (Time.millisToPosix 0)
     dataLayer = LifeDataLayer.resolveLivesIfLoaded defaultTime unresolvedDataLayer

@@ -16,6 +16,8 @@
             "elm/svg": "1.0.1",
             "elm/time": "1.0.0",
             "elm/url": "1.0.0",
+            "fabhof/elm-ui-datepicker": "5.0.0",
+            "justinmimbs/date": "3.2.1",
             "mdgriffith/elm-ui": "1.1.8"
         },
         "indirect": {
