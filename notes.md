@@ -22,7 +22,8 @@
     - https://package.elm-lang.org/packages/n1k0/elm-daterange-picker/latest/
     - https://package.elm-lang.org/packages/fabhof/elm-ui-datepicker/latest/
   - x update search on typing
-  - loading feedback
+  - x loading feedback
+  - actually use the ui dates
 - elm render
   https://package.elm-lang.org/packages/shamansir/elm-graph-render/
   https://package.elm-lang.org/packages/goyalarchit/elm-dagre/

@@ -57,7 +57,7 @@ view model =
 
 query model =
   column [ height fill, width fill ]
-    [ searchBox model.searchTerm model.lifeSearch.results
+    [ searchBox model.searchTerm model.dataLayer.lives
     , serverSelect model.serverList model.selectedServer
     , dateSelect StartDateChange "Start Date" model.startDateModel
     , dateSelect EndDateChange "End Date" model.endDateModel
@@ -212,7 +212,7 @@ display model =
     , height fill
     ]
     [ row [ spacing 10, width fill ]
-      [ searchBox model.searchTerm model.lifeSearch.results
+      [ searchBox model.searchTerm model.dataLayer.lives
       , Input.button []
         { onPress = Just Back
         , label = text "Back"
@@ -226,12 +226,11 @@ display model =
 
 searchBox : String -> RemoteData a -> Element Msg
 searchBox searchTerm request =
-  -- TODO: loading
   el [ padding 2, width fill ] <|
     Input.search
       [ htmlAttribute <| on "change" <| targetValue Json.Decode.string Search
       , padding 2
-      , Background.color input
+      , Background.color (if request == Loading then background else input)
       , width (px 400)
       ]
       { onChange = SearchTyping
