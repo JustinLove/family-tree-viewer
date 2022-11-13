@@ -5,6 +5,7 @@ import RemoteData exposing (RemoteData(..))
 
 import Browser
 import DatePicker
+import Date as PickerDate
 import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border
@@ -61,6 +62,7 @@ query model =
     , serverSelect model.serverList model.selectedServer
     , dateSelect StartDateChange "Start Date" model.startDateModel
     , dateSelect EndDateChange "End Date" model.endDateModel
+    , dateWarning model.startDateModel.date model.endDateModel.date
     , showResult model model.lifeSearch.results
     ]
 
@@ -342,6 +344,19 @@ pickerSettings =
       ]
   }
 
+dateWarning : Maybe PickerDate.Date -> Maybe PickerDate.Date -> Element msg
+dateWarning start end =
+  case Maybe.map2 (PickerDate.diff PickerDate.Days) start end of
+    Just count ->
+      let countText = (String.fromInt count) in
+      if count < 14 then
+        none
+      else if count < 60 then
+        el [ Font.color caution ] (text "Large queries may make your browser slow or unstable")
+      else
+        el [ Font.color warning ] (text "Very large queries will likely make your browser slow or unstable")
+    Nothing -> none
+
 displayFooter : Element msg
 displayFooter =
   row
@@ -389,3 +404,5 @@ white = rgb 1 1 1
 selected = rgb 0.23 0.6 0.98
 control = rgb 0.2 0.2 0.2
 input = rgb 0 0 0
+caution = rgb 0.8 0.62 0.0
+warning = rgb 0.95 0.05 0.03
