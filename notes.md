@@ -23,7 +23,7 @@
     - https://package.elm-lang.org/packages/fabhof/elm-ui-datepicker/latest/
   - x update search on typing
   - x loading feedback
-  - actually use the ui dates
+  - log limits
 - elm render
   https://package.elm-lang.org/packages/shamansir/elm-graph-render/
   https://package.elm-lang.org/packages/goyalarchit/elm-dagre/

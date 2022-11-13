@@ -360,7 +360,7 @@ fetchLivesAroundTime : Posix -> Posix -> Model -> (Model, Cmd Msg)
 fetchLivesAroundTime startTime endTime model =
   let
     server = (model.selectedServer |> Maybe.withDefault defaultServerId)
-    updated = LifeDataLayer.queryAroundTime server startTime endTime 7 model.dataLayer
+    updated = LifeDataLayer.queryAroundTime server startTime endTime 365 model.dataLayer
   in
     fetchFilesForDataLayerIfNeeded updated model
 
@@ -494,7 +494,7 @@ lifeDataUpdated unresolvedDataLayer model =
     -- a lineage query may have discovered that the currently loaded data still has possible ancestors/children beyond the loaded data, and needed to expand the range
     neededDates = LifeDataLayer.neededDates dataLayer
   in
-    if List.isEmpty neededDates then
+    if List.isEmpty neededDates && LifeDataLayer.loadingCount dataLayer == 0 then
       lifeDataUpdateComplete dataLayer model
     else
       fetchFilesForDataLayer neededDates dataLayer model
