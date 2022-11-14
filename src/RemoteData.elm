@@ -5,6 +5,7 @@ module RemoteData exposing
   , toMaybe
   , fromResult
   , jsonDecode
+  , debugValue
   )
 
 import Http
@@ -57,3 +58,12 @@ jsonDecode decoder value =
         |> Json.Decode.errorToString
         |> Http.BadBody
         |> Failed
+
+debugValue : RemoteData a -> String
+debugValue data =
+  case data of
+    NotRequested -> "NotRequested"
+    NotAvailable -> "NotAvailable"
+    Loading -> "Loading"
+    Data value -> "Data"
+    Failed err -> "Failed"

@@ -324,7 +324,7 @@ logIsOnServer : Int -> (Date, RemoteData LifeLogDay) -> Bool
 logIsOnServer serverId (date, rdLog) =
   rdLog
     |> RemoteData.map (\log -> log.serverId == serverId)
-    |> RemoteData.withDefault False
+    |> RemoteData.withDefault True -- only data has server, have to assume others are for this server or we get an infinite loop. Maybe needs to be part tuple(triple)?
 
 logIsInDates : List Date -> (Date, a) -> Bool
 logIsInDates dates (date, _) =

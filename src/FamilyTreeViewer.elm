@@ -182,9 +182,16 @@ update msg model =
     DataLayer serverId_ date_ (Ok lifeLogDay) ->
       lifeDataUpdated (LifeDataLayer.livesReceived lifeLogDay model.dataLayer) model
     DataLayer serverId date (Err error) ->
-      let filename = dateYearMonthMonthDayWeekday Time.utc (date |> Calendar.toMillis |> Time.millisToPosix) in
-      ( {model | dataLayer = LifeDataLayer.fail serverId date error model.dataLayer}
-      , Log.httpError ("fetch data failed " ++ filename) error
+      let
+        filename = dateYearMonthMonthDayWeekday Time.utc (date |> Calendar.toMillis |> Time.millisToPosix)
+        dataLayer = LifeDataLayer.fail serverId date error model.dataLayer
+        (m2, c2) = lifeDataUpdated dataLayer model
+      in
+      ( m2
+      , Cmd.batch
+        [ c2
+        , Log.httpError ("fetch data failed " ++ filename) error
+        ]
       )
     CurrentZone zone ->
       ({model | zone = zone}, Cmd.none)
