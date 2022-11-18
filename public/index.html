@@ -17,7 +17,7 @@ text {
   font-size: 14px;
 }
 
-.node rect {
+.node ellipse, .node rect {
   stroke: #999;
   fill: #fff;
   stroke-width: 1.5px;
@@ -67,14 +67,14 @@ if (app.ports.renderGraphviz) {
 // --------------- Dagre --------------------
 if (app.ports.layoutDagre) {
   app.ports.layoutDagre.subscribe(function(json) {
-    console.log('received', json.length);
+    console.log('received', json);
     var g = new dagreD3.graphlib.Graph()
       .setGraph({})
       .setDefaultEdgeLabel(function() {return {}})
 
-    json.forEach(function(life) {
-      g.setNode(life.playerid, {label: life.playerid.toString(), width: 10, height: 10});
-      if (life.parent) g.setEdge(life.parent, life.playerid)
+    json.forEach(function(node) {
+      g.setNode(node.id, node.metadata);
+      if (node.parent) g.setEdge(node.parent, node.id)
     });
 
     console.log('graphed')

@@ -553,6 +553,9 @@ lifeDataUpdateComplete dataLayer model =
         --|> RemoteData.map Viz.renderGraphviz
         --|> RemoteData.withDefault Cmd.none
       , dataLayer.lives
+        |> RemoteData.map (List.filter (\life -> case life.age of
+            Just age -> age > 0.5
+            Nothing -> False))
         |> RemoteData.map Dagre.layout
         |> RemoteData.withDefault Cmd.none
       )
