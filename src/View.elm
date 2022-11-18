@@ -13,11 +13,11 @@ import Element.Border as Border
 import Element.Events as Events
 import Element.Font as Font
 import Element.Input as Input
+import Element.Keyed as Keyed
 import Element.Region as Region
 import Html exposing (Html)
 import Html.Attributes
 import Html.Events exposing (on)
-import Html.Keyed
 import Http
 import Json.Decode
 import Svg exposing (svg, use)
@@ -210,28 +210,26 @@ formatMonth month =
     Time.Dec -> "12"
 
 display model =
-  column
+  Keyed.column
     [ width fill
     , height fill
     ]
-    [ row [ spacing 10, width fill ]
+    [ ("top-ui", row [ spacing 10, width fill ]
       [ searchBox model.searchTerm model.dataLayer.lives
       , Input.button []
         { onPress = Just Back
         , label = text "Back"
         }
-      ]
-    --, showLoading model.graphText
-    , el [ width fill, height fill, clip, Background.color white ]
-      <| html
-      <| Html.Keyed.node "div" []
-        [ ("graph", svg
+      ])
+    , ("loading", showLoading model.graphText)
+    , ("graph-container", Keyed.el [ width fill, height fill, clip, Background.color white ]
+        ("graph", html <| svg
             [ Svg.Attributes.id "graph"
             , Svg.Attributes.width "1000"
             , Svg.Attributes.height "1000"
             ] []
-          )
-        ]
+        )
+      )
     ]
 
 searchBox : String -> RemoteData a -> Element Msg
