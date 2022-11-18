@@ -1,6 +1,7 @@
 module FamilyTreeViewer exposing (..)
 
 import Config
+import Dagre
 import LifeDataLayer
 import LifeSearch
 import Log
@@ -531,8 +532,11 @@ lifeDataUpdateComplete dataLayer model =
         | dataLayer = dataLayer
         , graphText = graphText
         }
-      , graphText
-        |> RemoteData.map Viz.renderGraphviz
+      --, graphText
+        --|> RemoteData.map Viz.renderGraphviz
+        --|> RemoteData.withDefault Cmd.none
+      , dataLayer.lives
+        |> RemoteData.map Dagre.layout
         |> RemoteData.withDefault Cmd.none
       )
 

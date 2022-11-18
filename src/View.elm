@@ -221,10 +221,17 @@ display model =
         , label = text "Back"
         }
       ]
-    , showLoading model.graphText
+    --, showLoading model.graphText
     , el [ width fill, height fill, clip, Background.color white ]
       <| html
-      <| Html.Keyed.node "div" [] [("graph", Html.div [Html.Attributes.id "graph"] []) ]
+      <| Html.Keyed.node "div" []
+        [ ("graph", svg
+            [ Svg.Attributes.id "graph"
+            , Svg.Attributes.width "1000"
+            , Svg.Attributes.height "1000"
+            ] []
+          )
+        ]
     ]
 
 searchBox : String -> RemoteData a -> Element Msg
