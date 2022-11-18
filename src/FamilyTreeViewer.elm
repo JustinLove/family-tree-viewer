@@ -13,6 +13,7 @@ import Viz
 
 import Browser
 import Browser.Dom
+import Browser.Events
 import Browser.Navigation as Navigation
 import Calendar exposing (Date)
 import Date as PickerDate
@@ -35,6 +36,7 @@ type Msg
   | CurrentUrl Url
   | CurrentDay PickerDate.Date
   | Navigate Browser.UrlRequest
+  | WindowSize (Int, Int)
 
 type alias Model =
   { searchTerm : String
@@ -50,6 +52,8 @@ type alias Model =
   , zone : Time.Zone
   , location : Url
   , navigationKey : Navigation.Key
+  , windowWidth : Int
+  , windowHeight : Int
   }
 
 type alias DateModel =
@@ -97,6 +101,8 @@ init _ location key =
       , zone = Time.utc
       , location = location
       , navigationKey = key
+      , windowWidth = 320
+      , windowHeight = 300
       }
   in
     ( initialModel
@@ -105,8 +111,15 @@ init _ location key =
       , Time.here |> Task.perform CurrentZone
       , Time.now |> Task.perform CurrentTime
       , PickerDate.today |> Task.perform CurrentDay
+      , initialWindowSize
       ]
     )
+
+initialWindowSize : Cmd Msg
+initialWindowSize =
+  Browser.Dom.getViewport
+    |> Task.map (\viewport -> (round viewport.viewport.width, round viewport.viewport.height))
+    |> Task.perform WindowSize
 
 dateInit : DateModel
 dateInit =
@@ -213,6 +226,10 @@ update msg model =
       )
     Navigate (Browser.External url) ->
       (model, Navigation.load url)
+    WindowSize (width, height) ->
+      ( {model | windowWidth = width, windowHeight = height}
+      , Cmd.none
+      )
 
 dateInitialvalue : PickerDate.Date -> PickerDate.Date -> DateModel -> DateModel
 dateInitialvalue selectedDate today dateModel =
@@ -296,7 +313,7 @@ changeRouteTo location model =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-  Sub.none
+  Browser.Events.onResize (\w h -> WindowSize (w, h))
 
 myLife : Parse.Life -> Life
 myLife life =

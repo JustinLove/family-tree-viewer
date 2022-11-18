@@ -31,7 +31,7 @@ text {
 </head>
 
 <body>
-  <svg id='graph' width=1000 height=1000></svg>
+  <svg id='graph' width=320 height=300></svg>
 </body>
 
 <script type="text/javascript">
@@ -85,19 +85,28 @@ if (app.ports.layoutDagre) {
     var svg = d3.select("svg#graph"),
         svgGroup = svg.append("g");
 
-    // Set up zoom support
-    var zoom = d3.zoom().on("zoom", function() {
-      svgGroup.attr("transform", d3.event.transform);
-    });
-    svg.call(zoom);
-
     // Run the renderer. This is what draws the final graph.
     render(d3.select("svg#graph g"), g);
 
+    svgPanZoom(svg.node(), {
+      zoomEnabled: true,
+      controlIconsEnabled: true,
+      fit: true,
+      center: true,
+      maxZoom: 100.0,
+      minZoom: 0.5
+    })
+
     // Center the graph
-    var xCenterOffset = (svg.attr("width") - g.graph().width) / 2;
-    svgGroup.attr("transform", "translate(" + xCenterOffset + ", 20)");
-    svg.attr("height", g.graph().height + 40);
+    //var xCenterOffset = (svg.attr("width") - g.graph().width) / 2;
+    //svgGroup.attr("transform", "translate(" + xCenterOffset + ", 20)");
+
+    // Set up zoom support
+    //var zoom = d3.zoom().on("zoom", function() {
+      //svgGroup.attr("transform", d3.event.transform);
+    //});
+    //svg.call(zoom);
+
     console.log('render done')
   })
 }

@@ -225,8 +225,8 @@ display model =
     , ("graph-container", Keyed.el [ width fill, height fill, clip, Background.color white ]
         ("graph", html <| svg
             [ Svg.Attributes.id "graph"
-            , Svg.Attributes.width "1000"
-            , Svg.Attributes.height "1000"
+            , Svg.Attributes.width (String.fromInt model.windowWidth)
+            , Svg.Attributes.height (String.fromInt model.windowHeight)
             ] []
         )
       )
