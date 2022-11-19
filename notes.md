@@ -30,7 +30,7 @@
   https://package.elm-lang.org/packages/shamansir/elm-graph-render/
   https://package.elm-lang.org/packages/goyalarchit/elm-dagre/
 - extended graph
-  - rest of label
+  - x rest of label
   - highlights
   - killer edges
     - unconstrained

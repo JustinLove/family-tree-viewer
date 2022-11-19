@@ -22,14 +22,18 @@ nodeJson life =
 
 metadataJson : Life -> Value
 metadataJson life =
-  let label = nodeLabel life in
+  let
+    label = nodeLabel life
+    name = nameLabel life |> Maybe.withDefault ""
+  in
   object
     [ ("label", string label)
+    , ("labelType", string "html")
     , ("shape", shapeJson life)
     , ("style", string ((color "fill" 0 6 life.accountHash) ++ (color "stroke" 6 12 life.accountHash)))
     , ("class", string (classes life))
-    , ("width", int ((String.length label) * 9))
-    , ("height", int 10)
+    , ("width", int ((String.length name) * 12))
+    , ("height", int 40)
     ]
 
 color : String -> Int -> Int -> Maybe String -> String
@@ -58,9 +62,22 @@ parentJson parent =
 
 nodeLabel : Life -> String
 nodeLabel life =
+  [ nameLabel life
+  , ageLabel life
+  , life.deathCause
+  ]
+    |> List.filterMap identity
+    |> String.join "</br>"
+
+nameLabel : Life -> Maybe String
+nameLabel life =
   case life.name of
-    Just name -> name
-    Nothing -> (String.fromInt life.playerid)
+    Just name -> Just name
+    Nothing -> Just (String.fromInt life.playerid)
+
+ageLabel : Life -> Maybe String
+ageLabel life =
+  life.age |> Maybe.map (round >> String.fromInt)
 
 shapeJson : Life -> Value
 shapeJson life =
