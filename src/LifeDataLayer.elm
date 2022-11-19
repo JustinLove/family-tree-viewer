@@ -15,6 +15,7 @@ module LifeDataLayer exposing
   , currentLives
   , isDisplayingExactRange
   , isDisplayingSingleLineage
+  , lifeUsedForLineageDisplay
   , queryAroundTime
   , queryExactTime
   , queryLineageOfLife
@@ -228,6 +229,17 @@ isDisplayingSingleLineage data =
   case data.displayFilter of
     DisplayLineageOf _ -> True
     _ -> False
+
+lifeUsedForLineageDisplay : LifeDataLayer -> Maybe Parse.Life
+lifeUsedForLineageDisplay data =
+  case data.displayFilter of
+    DisplayLineageOf id ->
+      data.lives
+        |> RemoteData.toMaybe
+        |> Maybe.andThen (List.foldl (\life mresult ->
+          if life.playerid == id then Just life else mresult )
+          Nothing)
+    _ -> Nothing
 
 queryAroundTime : Int -> Posix -> Posix -> Int -> LifeDataLayer -> LifeDataLayer
 queryAroundTime serverId startTime endTime maxLogs data =

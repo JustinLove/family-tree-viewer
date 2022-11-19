@@ -31,13 +31,13 @@
   https://package.elm-lang.org/packages/goyalarchit/elm-dagre/
 - extended graph
   - x rest of label
-  - highlights
-  - killer edges
-    - unconstrained
+  - x highlights
+  - x killer edges
   - killer nodes
   - query other nodes
   - color adjustments
   - ruby etc
+- birth time in map
 - life mapping for render?
 - thread max logs
   - different for query vs. lineage?

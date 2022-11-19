@@ -544,6 +544,8 @@ lifeDataUpdateComplete dataLayer model =
     Display ->
       let
         graphText = RemoteData.map livesToGraphViz dataLayer.lives
+        focus = LifeDataLayer.lifeUsedForLineageDisplay dataLayer
+          |> Maybe.andThen .accountHash
       in
       ( { model
         | dataLayer = dataLayer
@@ -556,7 +558,7 @@ lifeDataUpdateComplete dataLayer model =
         |> RemoteData.map (List.filter (\life -> case life.age of
             Just age -> age > 0.5
             Nothing -> False))
-        |> RemoteData.map Dagre.layout
+        |> RemoteData.map (Dagre.layout (\life -> life.accountHash == focus))
         |> RemoteData.withDefault Cmd.none
       )
 
