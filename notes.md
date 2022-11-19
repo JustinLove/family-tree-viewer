@@ -25,13 +25,18 @@
   - x loading feedback
   - x log limits
   - x loading feedback
-- lineage query requires most recent missing file, never finishes
+- x lineage query requires most recent missing file, never finishes
 - elm render
   https://package.elm-lang.org/packages/shamansir/elm-graph-render/
   https://package.elm-lang.org/packages/goyalarchit/elm-dagre/
 - extended graph
+  - rest of label
+  - highlights
   - killer edges
+    - unconstrained
   - killer nodes
+  - query other nodes
+  - color adjustments
   - ruby etc
 - life mapping for render?
 - thread max logs

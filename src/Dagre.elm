@@ -27,6 +27,7 @@ metadataJson life =
     [ ("label", string label)
     , ("shape", shapeJson life)
     , ("style", string ((color "fill" 0 6 life.accountHash) ++ (color "stroke" 6 12 life.accountHash)))
+    , ("class", string (classes life))
     , ("width", int ((String.length label) * 9))
     , ("height", int 10)
     ]
@@ -35,6 +36,16 @@ color : String -> Int -> Int -> Maybe String -> String
 color attr start end mhash =
   case mhash of
     Just hash -> attr ++ ": #" ++ (String.slice start end hash) ++ ";"
+    Nothing -> ""
+
+classes : Life -> String
+classes life =
+  (infant life)
+
+infant : Life -> String
+infant life =
+  case life.age of
+    Just age -> if age < 3 then "infant" else ""
     Nothing -> ""
 
 parentJson : Parent -> Value
