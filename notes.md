@@ -35,7 +35,7 @@
   - x killer edges
   - x query other nodes
   - x killer names in death cause
-  - color adjustments
+  - x color adjustments
   - ruby etc
 - birth time in map
 - life mapping for render?

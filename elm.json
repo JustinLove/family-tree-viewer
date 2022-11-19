@@ -18,7 +18,8 @@
             "elm/url": "1.0.0",
             "fabhof/elm-ui-datepicker": "5.0.0",
             "justinmimbs/date": "3.2.1",
-            "mdgriffith/elm-ui": "1.1.8"
+            "mdgriffith/elm-ui": "1.1.8",
+            "tesk9/palette": "3.0.1"
         },
         "indirect": {
             "elm/bytes": "1.0.8",

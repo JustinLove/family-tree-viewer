@@ -3,6 +3,7 @@ port module Dagre exposing (layout)
 import OHOLData.ParseLives as Parse exposing (Life, Parent(..))
 
 import Json.Encode exposing (..)
+import SolidColor
 
 layout : (Life -> Bool) -> List Life -> Cmd msg
 layout highlight lives =
@@ -48,12 +49,24 @@ metadataJson lives highlighted life =
     labelLength = max nameLength deathLength
     w = (if highlighted then 20 else 10) * labelLength
     h = if highlighted then 100 else 50
+    textColor = life.accountHash
+      |> Maybe.map (String.slice 0 6)
+      |> Maybe.andThen (SolidColor.fromHex>>Result.toMaybe)
+      |> Maybe.map SolidColor.highContrast
+      |> Maybe.map SolidColor.toHex
+      |> Maybe.withDefault "black"
+    colorLabel = "<div style='color:" ++ textColor ++ ";'>" ++ label ++ "</div>"
   in
   object
-    [ ("label", string label)
+    [ ("label", string colorLabel)
     , ("labelType", string "html")
     , ("shape", shapeJson life)
-    , ("style", string ((color "fill" 0 6 life.accountHash) ++ (color "stroke" 6 12 life.accountHash)))
+    , ("style", string
+        (  (color "fill" 0 6 life.accountHash)
+        ++ (color "stroke" 6 12 life.accountHash)
+        ++ (color "color" 6 12 life.accountHash)
+        )
+      )
     , ("class", string (classes highlighted life))
     , ("width", int w)
     , ("height", int h)
