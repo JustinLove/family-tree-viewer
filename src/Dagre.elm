@@ -39,7 +39,9 @@ metadataJson highlighted life =
   let
     label = nodeLabel life
     name = nameLabel life |> Maybe.withDefault ""
-    w = if highlighted then 20 else 10
+    death = life.deathCause |> Maybe.withDefault ""
+    labelLength = max (String.length death) (String.length name)
+    w = (if highlighted then 20 else 10) * labelLength
     h = if highlighted then 100 else 50
   in
   object
@@ -48,7 +50,7 @@ metadataJson highlighted life =
     , ("shape", shapeJson life)
     , ("style", string ((color "fill" 0 6 life.accountHash) ++ (color "stroke" 6 12 life.accountHash)))
     , ("class", string (classes highlighted life))
-    , ("width", int ((String.length name) * w))
+    , ("width", int w)
     , ("height", int h)
     ]
 

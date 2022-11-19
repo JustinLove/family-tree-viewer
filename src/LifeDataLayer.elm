@@ -35,6 +35,7 @@ type alias LifeDataLayer =
   { serverId : Int
   , displayFilter : LifeDisplayFilter
   , lives : RemoteData (List Parse.Life)
+  , others : RemoteData (List Parse.Life)
   , logs : List (Date, RemoteData LifeLogDay)
   }
 
@@ -55,6 +56,7 @@ empty =
   { serverId = 0
   , displayFilter = DisplayAll
   , lives = NotRequested
+  , others = NotRequested
   , logs = []
   }
 
@@ -101,15 +103,39 @@ resolveLivesIfLoaded defaultTime data =
 resolveLives : LifeDataLayer -> LifeDataLayer
 resolveLives data =
   let
-    lives = resolveLifeLogs data.logs
+    loaded = resolveLifeLogs data.logs
       |> List.map (\life -> {life | serverId = data.serverId})
+    lives = loaded
       |> applyDisplayFilter data.displayFilter
+    playerids = lives
+      |> List.map .playerid
+    killerids = lives
+      |> List.filterMap killerId
+    others = loaded
+      |> List.filter (lifeIdInList killerids)
+      |> List.filter (not << (lifeIdInList playerids))
+      |> List.map (\life -> {life | parent = Parse.NoParent})
   in
   { serverId = data.serverId
   , displayFilter = data.displayFilter
   , lives = Data lives
+  , others = Data others
   , logs = data.logs
   }
+
+killerId : Parse.Life -> Maybe Int
+killerId life =
+  case life.deathCause of
+    Just cause ->
+      if String.startsWith "killer" cause then
+        String.toInt (String.dropLeft 7 cause)
+      else
+        Nothing
+    Nothing -> Nothing
+
+lifeIdInList : List Int -> Parse.Life -> Bool
+lifeIdInList ids life =
+  List.member life.playerid ids
 
 resolveLifeLogs : List (Date, RemoteData LifeLogDay) -> List Parse.Life
 resolveLifeLogs logs =
@@ -328,6 +354,7 @@ setLoading data =
   { serverId = data.serverId
   , displayFilter = data.displayFilter
   , lives = Loading
+  , others = Loading
   , logs = data.logs
     |> List.map (\(date,rd) -> if rd == NotRequested then (date,Loading) else (date,rd))
   }

@@ -33,8 +33,8 @@
   - x rest of label
   - x highlights
   - x killer edges
-  - killer nodes
-  - query other nodes
+  - x query other nodes
+  - killer names in death cause
   - color adjustments
   - ruby etc
 - birth time in map
