@@ -34,7 +34,7 @@
   - x highlights
   - x killer edges
   - x query other nodes
-  - killer names in death cause
+  - x killer names in death cause
   - color adjustments
   - ruby etc
 - birth time in map

@@ -10,14 +10,14 @@ layout highlight lives =
 
 livesJson : (Life -> Bool) -> List Life -> Value
 livesJson highlight lives =
-  list (nodeJson highlight) lives
+  list (nodeJson lives highlight) lives
 
-nodeJson : (Life -> Bool) -> Life -> Value
-nodeJson highlight life =
+nodeJson : List Life -> (Life -> Bool) -> Life -> Value
+nodeJson lives highlight life =
   let highlighted = highlight life in
   object
     ( [ ("id", int life.playerid)
-      , ("metadata", metadataJson highlighted life)
+      , ("metadata", metadataJson lives highlighted life)
       , ("parent", parentJson life.parent)
       ] ++ (killerJson life)
     )
@@ -34,13 +34,18 @@ killerJson life =
         []
     Nothing -> []
 
-metadataJson : Bool -> Life -> Value
-metadataJson highlighted life =
+metadataJson : List Life -> Bool -> Life -> Value
+metadataJson lives highlighted life =
   let
-    label = nodeLabel life
-    name = nameLabel life |> Maybe.withDefault ""
-    death = life.deathCause |> Maybe.withDefault ""
-    labelLength = max (String.length death) (String.length name)
+    name = nameLabel life
+    age = ageLabel life
+    death = deathLabel lives life
+    label = [ name , age , death ]
+        |> List.filterMap identity
+        |> String.join "</br>"
+    nameLength = name |> Maybe.map String.length |> Maybe.withDefault 2
+    deathLength = death |> Maybe.map String.length |> Maybe.withDefault 2
+    labelLength = max nameLength deathLength
     w = (if highlighted then 20 else 10) * labelLength
     h = if highlighted then 100 else 50
   in
@@ -80,15 +85,6 @@ parentJson parent =
     ChildOf par -> int par
     Lineage par _ -> int par
 
-nodeLabel : Life -> String
-nodeLabel life =
-  [ nameLabel life
-  , ageLabel life
-  , life.deathCause
-  ]
-    |> List.filterMap identity
-    |> String.join "</br>"
-
 nameLabel : Life -> Maybe String
 nameLabel life =
   case life.name of
@@ -98,6 +94,24 @@ nameLabel life =
 ageLabel : Life -> Maybe String
 ageLabel life =
   life.age |> Maybe.map (round >> String.fromInt)
+
+deathLabel : List Life -> Life -> Maybe String
+deathLabel lives life = 
+  case life.deathCause of
+    Just cause ->
+      if String.startsWith "killer" cause then
+        case String.toInt (String.dropLeft 7 cause) of
+          Just killerid ->
+            List.foldl (\other mlabel ->
+              if other.playerid == killerid then
+                nameLabel other |> Maybe.map (\n -> "Killed by " ++ n)
+              else
+                mlabel
+              ) life.deathCause lives
+          Nothing -> Nothing
+      else
+        Nothing
+    Nothing -> Nothing
 
 shapeJson : Life -> Value
 shapeJson life =
