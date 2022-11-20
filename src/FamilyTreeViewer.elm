@@ -573,7 +573,7 @@ lifeDataUpdateComplete dataLayer model =
       , dataLayer.lives
         |> RemoteData.map (List.filter (\life -> case life.age of
             Just age -> age > 0.5
-            Nothing -> False))
+            Nothing -> True))
         |> RemoteData.map (\lives -> lives ++ (RemoteData.withDefault [] dataLayer.others))
         |> RemoteData.map (Dagre.layout (\life -> life.accountHash == focus))
         |> RemoteData.withDefault Cmd.none
