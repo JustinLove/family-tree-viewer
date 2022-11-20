@@ -105,16 +105,24 @@ resolveLives data =
   let
     loaded = resolveLifeLogs data.logs
       |> List.map (\life -> {life | serverId = data.serverId})
+      --|> checkForLife "loaded" 2724748
     lives = loaded
       |> applyDisplayFilter data.displayFilter
+      --|> checkForLife "in family" 2724748
     playerids = lives
       |> List.map .playerid
     killerids = lives
       |> List.filterMap killerId
+      --|> Debug.log "killers"
     others = loaded
       |> List.filter (lifeIdInList killerids)
+      --|> checkForLife "killer" 2724748
       |> List.filter (not << (lifeIdInList playerids))
+      --|> checkForLife "not in family" 2724748
       |> List.map (\life -> {life | parent = Parse.NoParent})
+      |> List.map (\life -> case killerId life of
+        Just _ -> {life | deathCause = Just "killer"}
+        Nothing -> life)
   in
   { serverId = data.serverId
   , displayFilter = data.displayFilter
@@ -122,6 +130,15 @@ resolveLives data =
   , others = Data others
   , logs = data.logs
   }
+
+{-
+checkForLife : String -> Int -> List Parse.Life -> List Parse.Life
+checkForLife why id lives =
+  if List.any (\l -> l.playerid == id) lives then
+    let _ = Debug.log why True in lives
+  else
+    let _ = Debug.log why False in lives
+-}
 
 killerId : Parse.Life -> Maybe Int
 killerId life =

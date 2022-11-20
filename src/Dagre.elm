@@ -16,7 +16,11 @@ livesJson highlight lives =
 
 nodeJson : List Life -> (Life -> Bool) -> Life -> Value
 nodeJson lives highlight life =
-  let highlighted = highlight life in
+  let
+    highlighted = highlight life
+    --_ = Maybe.map (checkLink life "Parent" lives) (parentId life.parent)
+    --_ = Maybe.map (checkLink life "Killer" lives) (killerId life)
+  in
   object
     ( [ ("id", int life.playerid)
       , ("metadata", metadataJson lives highlighted life)
@@ -24,17 +28,34 @@ nodeJson lives highlight life =
       ] ++ (killerJson life)
     )
 
+{-
+checkLink : Life -> String -> List Life -> Int -> Bool
+checkLink life which lives id =
+  if List.any (\l -> l.playerid == id) lives then
+    True
+  else
+    let
+      _ = Debug.log which id
+      _ = Debug.log "life" life
+    in
+      Debug.todo "missing node"
+-}
+
 killerJson : Life -> List (String, Value)
 killerJson life =
+  case killerId life of
+    Just id -> [("killer", int id)]
+    Nothing -> []
+
+killerId : Parse.Life -> Maybe Int
+killerId life =
   case life.deathCause of
     Just cause ->
       if String.startsWith "killer" cause then
-        case String.toInt (String.dropLeft 7 cause) of
-          Just id -> [("killer", int id)]
-          Nothing -> []
+        String.toInt (String.dropLeft 7 cause)
       else
-        []
-    Nothing -> []
+        Nothing
+    Nothing -> Nothing
 
 metadataJson : List Life -> Bool -> Life -> Value
 metadataJson lives highlighted life =
@@ -98,6 +119,14 @@ parentJson parent =
     UnknownParent -> null
     ChildOf par -> int par
     Lineage par _ -> int par
+
+parentId : Parent -> Maybe Int
+parentId parent =
+  case parent of
+    NoParent -> Nothing
+    UnknownParent -> Nothing
+    ChildOf par -> Just par
+    Lineage par _ -> Just par
 
 nameLabel : Life -> Maybe String
 nameLabel life =
