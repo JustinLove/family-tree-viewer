@@ -94,47 +94,52 @@ if (app.ports.renderGraphviz) {
 if (app.ports.layoutDagre) {
   app.ports.layoutDagre.subscribe(function(json) {
     setTimeout(function() { // allow the loading text to update
-      var g = new dagreD3.graphlib.Graph()
-        .setGraph({})
-        .setDefaultEdgeLabel(function() {return {}})
+      try {
+        var g = new dagreD3.graphlib.Graph()
+          .setGraph({})
+          .setDefaultEdgeLabel(function() {return {}})
 
-      json.forEach(function(node) {
-        g.setNode(node.id, node.metadata);
-        if (node.parent) g.setEdge(node.parent, node.id)
-        // killer arrow dir reversed because of dagre node ranking
-        if (node.killer) g.setEdge(node.killer, node.id, {"class": "killer", weight: 0.0001})
-      });
+        json.forEach(function(node) {
+          g.setNode(node.id, node.metadata);
+          if (node.parent) g.setEdge(node.parent, node.id)
+          // killer arrow dir reversed because of dagre node ranking
+          if (node.killer) g.setEdge(node.killer, node.id, {"class": "killer", weight: 0.0001})
+        });
 
-      // Create the renderer
-      var render = new dagreD3.render();
+        // Create the renderer
+        var render = new dagreD3.render();
 
-      // Set up an SVG group so that we can translate the final graph.
-      var svg = d3.select("svg#graph"),
-          svgGroup = svg.append("g");
+        // Set up an SVG group so that we can translate the final graph.
+        var svg = d3.select("svg#graph"),
+            svgGroup = svg.append("g");
 
-      // Run the renderer. This is what draws the final graph.
-      render(d3.select("svg#graph g"), g);
+        // Run the renderer. This is what draws the final graph.
+        render(d3.select("svg#graph g"), g);
 
-      svgPanZoom(svg.node(), {
-        zoomEnabled: true,
-        controlIconsEnabled: true,
-        fit: true,
-        center: true,
-        maxZoom: 100.0,
-        minZoom: 0.5
-      })
+        svgPanZoom(svg.node(), {
+          zoomEnabled: true,
+          controlIconsEnabled: true,
+          fit: true,
+          center: true,
+          maxZoom: 100.0,
+          minZoom: 0.5
+        })
 
-      // Center the graph
-      //var xCenterOffset = (svg.attr("width") - g.graph().width) / 2;
-      //svgGroup.attr("transform", "translate(" + xCenterOffset + ", 20)");
+        // Center the graph
+        //var xCenterOffset = (svg.attr("width") - g.graph().width) / 2;
+        //svgGroup.attr("transform", "translate(" + xCenterOffset + ", 20)");
 
-      // Set up zoom support
-      //var zoom = d3.zoom().on("zoom", function() {
-        //svgGroup.attr("transform", d3.event.transform);
-      //});
-      //svg.call(zoom);
+        // Set up zoom support
+        //var zoom = d3.zoom().on("zoom", function() {
+          //svgGroup.attr("transform", d3.event.transform);
+        //});
+        //svg.call(zoom);
 
-      app.ports.layoutComplete.send(null)
+        app.ports.layoutComplete.send(null)
+      } catch (e) {
+        console.error(e)
+        app.ports.layoutErrorPort.send(e)
+      }
     }, 0)
   })
 }

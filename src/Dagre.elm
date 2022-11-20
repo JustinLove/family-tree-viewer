@@ -1,8 +1,9 @@
-port module Dagre exposing (layout, layoutComplete)
+port module Dagre exposing (layout, layoutComplete, layoutError)
 
 import OHOLData.ParseLives as Parse exposing (Life, Parent(..))
 
 import Json.Encode exposing (..)
+import Json.Decode as Decode
 import SolidColor
 
 layout : (Life -> Bool) -> List Life -> Cmd msg
@@ -139,5 +140,18 @@ maybe f mb =
     Just a -> f a
     Nothing -> null
 
+layoutError : (Result Decode.Error String -> msg) -> Sub msg
+layoutError msg =
+  layoutErrorPort (portMap msg)
+
+portMap : (Result Decode.Error String -> msg) -> Value -> msg
+portMap msg =
+  (Decode.decodeValue errorDecoder) >> msg
+
+errorDecoder : Decode.Decoder String
+errorDecoder =
+  Decode.field "message" Decode.string
+
 port layoutDagre : Value -> Cmd msg
 port layoutComplete : (() -> msg) -> Sub msg
+port layoutErrorPort : (Value -> msg) -> Sub msg

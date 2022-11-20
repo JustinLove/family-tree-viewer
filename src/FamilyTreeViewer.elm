@@ -19,6 +19,7 @@ import Calendar exposing (Date)
 import Date as PickerDate
 import DatePicker
 import Http
+import Json.Decode
 import Parser.Advanced as Parser
 import Task
 import Time exposing (Posix)
@@ -32,6 +33,7 @@ type Msg
   | ServerList (Result Http.Error (List Decode.Server))
   | DataLayer Int Date (Result Http.Error LifeDataLayer.LifeLogDay)
   | LayoutComplete
+  | LayoutErrorReport (Result Json.Decode.Error String)
   | CurrentZone Time.Zone
   | CurrentTime Posix
   | CurrentUrl Url
@@ -212,6 +214,10 @@ update msg model =
       )
     LayoutComplete ->
       ({model | layoutStatus = LayoutIdle}, Cmd.none)
+    LayoutErrorReport (Ok message)->
+      ({model | layoutStatus = LayoutError message}, Cmd.none)
+    LayoutErrorReport (Err err)->
+      ({model | layoutStatus = LayoutError "Error decoding error"}, Cmd.none)
     CurrentZone zone ->
       ({model | zone = zone}, Cmd.none)
     CurrentTime now ->
@@ -321,6 +327,7 @@ subscriptions model =
   Sub.batch
     [ Browser.Events.onResize (\w h -> WindowSize (w, h))
     , Dagre.layoutComplete (always LayoutComplete)
+    , Dagre.layoutError LayoutErrorReport
     ]
 
 myLife : Parse.Life -> Life

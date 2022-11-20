@@ -42,6 +42,7 @@ type Mode
 type LayoutStatus
   = LayoutRendering
   | LayoutIdle
+  | LayoutError String
 
 --document : (Msg -> msg) -> model -> Browser.Document msg
 document tagger model =
@@ -97,6 +98,7 @@ showLoading layoutStatus remote =
       case layoutStatus of
         LayoutRendering -> el [ centerX, centerY ] <| text "Rendering"
         LayoutIdle -> none
+        LayoutError message -> el [ centerX, centerY ] <| text ("Rendering Error: " ++ message)
     Failed error ->
       showError error
 
