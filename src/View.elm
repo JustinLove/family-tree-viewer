@@ -1,4 +1,4 @@
-module View exposing (Msg(..), Mode(..), view, document)
+module View exposing (Msg(..), Mode(..), LayoutStatus(..), view, document)
 
 import OHOLData.Decode as Decode exposing (Server)
 import RemoteData exposing (RemoteData(..))
@@ -38,6 +38,10 @@ type Msg
 type Mode
   = Query
   | Display
+
+type LayoutStatus
+  = LayoutRendering
+  | LayoutIdle
 
 --document : (Msg -> msg) -> model -> Browser.Document msg
 document tagger model =
@@ -80,8 +84,8 @@ showResult model loading remote =
     Failed error ->
       showError error
 
-showLoading : RemoteData a -> Element Msg
-showLoading remote =
+showLoading : LayoutStatus -> RemoteData a -> Element Msg
+showLoading layoutStatus remote =
   case remote of
     NotRequested ->
       none
@@ -90,7 +94,9 @@ showLoading remote =
     Loading ->
       el [ centerX, centerY ] <| text "Loading"
     Data _ ->
-      none
+      case layoutStatus of
+        LayoutRendering -> el [ centerX, centerY ] <| text "Rendering"
+        LayoutIdle -> none
     Failed error ->
       showError error
 
@@ -221,7 +227,7 @@ display model =
         , label = text "Back"
         }
       ])
-    , ("loading", showLoading model.graphText)
+    , ("loading", showLoading model.layoutStatus model.dataLayer.lives)
     , ("graph-container", Keyed.el [ width fill, height fill, clip, Background.color white ]
         ("graph", html <| svg
             [ Svg.Attributes.id "graph"

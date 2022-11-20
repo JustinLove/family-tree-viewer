@@ -1,4 +1,4 @@
-port module Dagre exposing (layout)
+port module Dagre exposing (layout, layoutComplete)
 
 import OHOLData.ParseLives as Parse exposing (Life, Parent(..))
 
@@ -140,3 +140,4 @@ maybe f mb =
     Nothing -> null
 
 port layoutDagre : Value -> Cmd msg
+port layoutComplete : (() -> msg) -> Sub msg

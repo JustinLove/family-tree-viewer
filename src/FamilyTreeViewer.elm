@@ -8,7 +8,7 @@ import Log
 import OHOLData.Decode as Decode
 import OHOLData.ParseLives as Parse exposing (Parent(..))
 import RemoteData exposing (RemoteData(..))
-import View exposing (Mode(..))
+import View exposing (Mode(..), LayoutStatus(..))
 import Viz
 
 import Browser
@@ -31,6 +31,7 @@ type Msg
   = UI View.Msg
   | ServerList (Result Http.Error (List Decode.Server))
   | DataLayer Int Date (Result Http.Error LifeDataLayer.LifeLogDay)
+  | LayoutComplete
   | CurrentZone Time.Zone
   | CurrentTime Posix
   | CurrentUrl Url
@@ -50,6 +51,7 @@ type alias Model =
   , startDateModel : DateModel
   , endDateModel : DateModel
   , zone : Time.Zone
+  , layoutStatus : LayoutStatus
   , location : Url
   , navigationKey : Navigation.Key
   , windowWidth : Int
@@ -99,6 +101,7 @@ init _ location key =
       , startDateModel = dateInit
       , endDateModel = dateInit
       , zone = Time.utc
+      , layoutStatus = LayoutIdle
       , location = location
       , navigationKey = key
       , windowWidth = 320
@@ -207,6 +210,8 @@ update msg model =
         , Log.httpError ("fetch data failed " ++ filename) error
         ]
       )
+    LayoutComplete ->
+      ({model | layoutStatus = LayoutIdle}, Cmd.none)
     CurrentZone zone ->
       ({model | zone = zone}, Cmd.none)
     CurrentTime now ->
@@ -313,7 +318,10 @@ changeRouteTo location model =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-  Browser.Events.onResize (\w h -> WindowSize (w, h))
+  Sub.batch
+    [ Browser.Events.onResize (\w h -> WindowSize (w, h))
+    , Dagre.layoutComplete (always LayoutComplete)
+    ]
 
 myLife : Parse.Life -> Life
 myLife life =
@@ -550,6 +558,7 @@ lifeDataUpdateComplete dataLayer model =
       ( { model
         | dataLayer = dataLayer
         , graphText = graphText
+        , layoutStatus = LayoutRendering
         }
       --, graphText
         --|> RemoteData.map Viz.renderGraphviz
