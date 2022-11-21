@@ -36,8 +36,9 @@
   - x query other nodes
   - x killer names in death cause
   - x color adjustments
-  - ruby etc
-- birth time in map
+  - x ruby etc
+- x birth time in map
+- x lost death cause
 - life mapping for render?
 - thread max logs
   - different for query vs. lineage?

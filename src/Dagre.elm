@@ -151,9 +151,9 @@ deathLabel lives life =
               else
                 mlabel
               ) life.deathCause lives
-          Nothing -> Nothing
+          Nothing -> Just cause
       else
-        Nothing
+        Just cause
     Nothing -> Nothing
 
 shapeJson : Life -> Value
