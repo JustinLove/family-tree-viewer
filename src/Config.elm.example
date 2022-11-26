@@ -1,3 +1,5 @@
 module Config exposing (..)
 
-treeServer = "//ohol-data-cache.wondible.com"
+publicLifeLogData = "//onemap.wondible.com/publicLifeLogData/lifeLog_{server}/{filename}.txt"
+
+serversPath = "//onemap.wondible.com/data/servers.json"

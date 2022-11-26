@@ -346,7 +346,7 @@ myLife life =
 fetchServers : Cmd Msg
 fetchServers =
   Http.get
-    { url = Url.relative ["data/servers.json"] []
+    { url = Url.relative [Config.serversPath] []
     , expect = Http.expectJson ServerList Decode.servers
     }
 
@@ -399,8 +399,6 @@ fetchFilesForDataLayerIfNeeded updated model =
     else
       fetchFilesForDataLayer neededDates updated model
 
-publicLifeLogData = "publicLifeLogData/lifeLog_{server}/{filename}.txt"
-
 fetchFilesForDataLayer : (List Date) -> LifeDataLayer.LifeDataLayer -> Model -> (Model, Cmd Msg)
 fetchFilesForDataLayer neededDates updated model =
   let (lifeSearch, _) = LifeSearch.updateData myLife Loading model.lifeSearch  in
@@ -409,7 +407,7 @@ fetchFilesForDataLayer neededDates updated model =
     , lifeSearch = lifeSearch
     }
   , neededDates
-    |> List.map (fetchDataLayerFile publicLifeLogData
+    |> List.map (fetchDataLayerFile Config.publicLifeLogData
         (updated.serverId)
         (nameForServer model updated.serverId)
       )
