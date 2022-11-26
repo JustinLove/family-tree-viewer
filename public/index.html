@@ -6,7 +6,6 @@
   <title>OHOL Family Trees</title>
   <link href="style.css" rel="stylesheet" />
   <script type="text/javascript" src="family-tree-viewer.js"></script>
-  <script type="text/javascript" src="viz.js"></script>
   <script type="text/javascript" src="svg-pan-zoom.min.js"></script>
   <script type="text/javascript" src="d3.min.js"></script>
   <script type="text/javascript" src="dagre-d3.min.js"></script>
@@ -63,33 +62,6 @@
 
 <script type="text/javascript">
 var app = Elm.FamilyTreeViewer.init()
-
-// --------------- Viz --------------------
-const workerURL = 'lite.render.js';
-let viz = new Viz({ workerURL });
-
-if (app.ports.renderGraphviz) {
-  app.ports.renderGraphviz.subscribe(function(text) {
-    return viz.renderSVGElement(text)
-      .then(function(element) {
-        document.getElementById('graph').appendChild(element)
-        svgPanZoom(element, {
-          zoomEnabled: true,
-          controlIconsEnabled: true,
-          fit: true,
-          center: true,
-          maxZoom: 100.0,
-          minZoom: 0.5
-        })
-      })
-      .catch(function(error) {
-        // Possibly display the error
-        console.error('error', error);
-        // Create a new Viz instance (@see Caveats page for more info)
-        viz = new Viz({ workerURL });
-      });
-  })
-}
 
 // --------------- Dagre --------------------
 if (app.ports.layoutDagre) {

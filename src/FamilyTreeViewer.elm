@@ -9,7 +9,6 @@ import OHOLData.Decode as Decode
 import OHOLData.ParseLives as Parse exposing (Parent(..))
 import RemoteData exposing (RemoteData(..))
 import View exposing (Mode(..), LayoutStatus(..))
-import Viz
 
 import Browser
 import Browser.Dom
@@ -47,7 +46,6 @@ type alias Model =
   , serverList : RemoteData (List Server)
   , dataLayer : LifeDataLayer.LifeDataLayer
   , lifeSearch : LifeSearch.LifeSearch Life
-  , graphText : RemoteData String
   , mode : Mode
   , timeRange : Maybe (Posix, Posix)
   , startDateModel : DateModel
@@ -97,7 +95,6 @@ init _ location key =
       , serverList = NotRequested
       , dataLayer = LifeDataLayer.empty
       , lifeSearch = LifeSearch.empty
-      , graphText = NotRequested
       , mode = Query
       , timeRange = Nothing
       , startDateModel = dateInit
@@ -305,7 +302,6 @@ changeRouteTo location model =
         | location = location
         , selectedServer = mserverId
         , mode = Display
-        , graphText = Loading
         , timeRange = Just (relativeStartTime 72 time, time)
         }
           |>  fetchLineage serverId playerid time
@@ -315,7 +311,6 @@ changeRouteTo location model =
             ( { model
               | location = location
               , mode = Query
-              , graphText = Failed (Http.BadUrl (Url.toString location))
               }
             , Cmd.none
             )
@@ -339,33 +334,6 @@ myLife life =
   , serverId = life.serverId
   , age = life.age |> Maybe.withDefault 0.0
   }
-
-livesToGraphViz : List Parse.Life -> String
-livesToGraphViz lives =
-  let
-    lines = lives
-      |> List.filter (\life -> case life.age of
-          Just age -> age > 0.5
-          Nothing -> False)
-      |> List.map lifeToGraphviz
-      |> String.concat
-  in
-    "digraph G {" ++ lines ++ "}"
-
-lifeToGraphviz : Parse.Life -> String
-lifeToGraphviz life =
-  let
-    sid = (String.fromInt life.playerid)
-    parentLine = case life.parent of
-      NoParent -> ""
-      UnknownParent -> ""
-      ChildOf par -> (String.fromInt par) ++ " -> " ++ sid ++ "\n"
-      Lineage par _ -> (String.fromInt par) ++ " -> " ++ sid ++ "\n"
-    label = Maybe.map (\name -> "label=\"" ++ name ++ "\"") life.name
-      |> Maybe.withDefault ""
-    nodeLine = (String.fromInt life.playerid) ++ " [" ++ label ++ "]\n"
-  in
-    nodeLine ++ parentLine
 
 fetchServers : Cmd Msg
 fetchServers =
@@ -558,18 +526,13 @@ lifeDataUpdateComplete dataLayer model =
       )
     Display ->
       let
-        graphText = RemoteData.map livesToGraphViz dataLayer.lives
         focus = LifeDataLayer.lifeUsedForLineageDisplay dataLayer
           |> Maybe.andThen .accountHash
       in
       ( { model
         | dataLayer = dataLayer
-        , graphText = graphText
         , layoutStatus = LayoutRendering
         }
-      --, graphText
-        --|> RemoteData.map Viz.renderGraphviz
-        --|> RemoteData.withDefault Cmd.none
       , dataLayer.lives
         |> RemoteData.map (List.filter (\life -> case life.age of
             Just age -> age > 0.5

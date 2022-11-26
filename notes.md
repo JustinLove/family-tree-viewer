@@ -39,11 +39,14 @@
   - x ruby etc
 - x birth time in map
 - x lost death cause
-- life mapping for render?
+- x remove graphviz
 - thread max logs
   - different for query vs. lineage?
+- ui cleanup
 - possible cloudfront to get life data
   - need servers.json
+- zoom
+- life mapping for render?
 
 ## test cases
  - 813 #server_name=bigserver2.onehouronelife.com&start_time=1581642490&end_time=1581649690&playerid=2692836
