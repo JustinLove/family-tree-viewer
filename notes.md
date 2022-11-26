@@ -42,10 +42,13 @@
 - x remove graphviz
 - x thread max logs
 - ui cleanup
+  - x can't resubmit query
+  - query vs results
 - possible cloudfront to get life data
   - need servers.json
 - zoom
 - life mapping for render?
+- search loading feedback?
 
 ## test cases
  - 813 #server_name=bigserver2.onehouronelife.com&start_time=1581642490&end_time=1581649690&playerid=2692836

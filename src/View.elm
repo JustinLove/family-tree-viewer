@@ -242,18 +242,25 @@ display model =
 
 searchBox : String -> RemoteData a -> Element Msg
 searchBox searchTerm request =
-  el [ padding 2, width fill ] <|
-    Input.search
+  row [ padding 2, spacing 10, width fill ]
+    [ Input.search
       [ htmlAttribute <| on "change" <| targetValue Json.Decode.string Search
       , padding 2
       , Background.color (if request == Loading then background else input)
       , width (px 400)
+      , alignLeft
       ]
       { onChange = SearchTyping
       , text = searchTerm
       , placeholder = Nothing
       , label = Input.labelLeft [] (text "Character Name or Hash")
       }
+    , Input.button [ alignLeft ]
+      { onPress = Just (Search searchTerm)
+      , label = text "Search"
+      }
+    , el [ width fill ] none
+    ]
 
 serverSelect : RemoteData (List Server) -> Maybe Int -> Element Msg
 serverSelect servers serverId =
