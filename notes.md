@@ -43,7 +43,7 @@
 - x thread max logs
 - ui cleanup
   - x can't resubmit query
-  - query vs results
+  - x query vs results
 - possible cloudfront to get life data
   - need servers.json
 - zoom

@@ -34,9 +34,11 @@ type Msg
   | StartDateChange DatePicker.ChangeEvent
   | EndDateChange DatePicker.ChangeEvent
   | Back
+  | NewQuery
 
 type Mode
   = Query
+  | Results
   | Display
 
 type LayoutStatus
@@ -60,6 +62,7 @@ view model =
     ] <|
     case model.mode of
       Query -> query model
+      Results -> results model
       Display -> display model
 
 query model =
@@ -69,7 +72,6 @@ query model =
     , dateSelect StartDateChange "Start Date" model.startDateModel
     , dateSelect EndDateChange "End Date" model.endDateModel
     , dateWarning model.startDateModel.date model.endDateModel.date
-    , showResult model (LifeDataLayer.loadingCount model.dataLayer) model.lifeSearch.results
     ]
 
 showResult model loading remote =
@@ -216,6 +218,15 @@ formatMonth month =
     Time.Oct -> "10"
     Time.Nov -> "11"
     Time.Dec -> "12"
+
+results model =
+  column [ height fill, width fill ]
+    [ Input.button []
+      { onPress = Just NewQuery
+      , label = text "New Query"
+      }
+    , showResult model (LifeDataLayer.loadingCount model.dataLayer) model.lifeSearch.results
+    ]
 
 display model =
   Keyed.column

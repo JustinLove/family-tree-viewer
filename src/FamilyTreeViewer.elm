@@ -172,8 +172,11 @@ update msg model =
       )
     UI View.Back ->
       ( model
-      , Navigation.pushUrl model.navigationKey <|
-          queryUrl model.location
+      , Navigation.pushUrl model.navigationKey (queryUrl model.location)
+      )
+    UI View.NewQuery ->
+      ( {model | mode = Query}
+      , Cmd.none
       )
     ServerList (Ok list) ->
       let
@@ -306,16 +309,21 @@ changeRouteTo location model =
         }
           |>  fetchLineage serverId playerid time
       _ ->
-        case location.fragment of
-          Just frag ->
+        case model.lifeSearch.results of
+          Data _ ->
+            ( { model
+              | location = location
+              , mode = Results
+              }
+            , Cmd.none
+            )
+          _ ->
             ( { model
               | location = location
               , mode = Query
               }
             , Cmd.none
             )
-          Nothing ->
-            ( { model | location = location, mode = Query }, Cmd.none)
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
@@ -515,6 +523,17 @@ lifeDataUpdateComplete : LifeDataLayer.LifeDataLayer -> Model -> (Model, Cmd Msg
 lifeDataUpdateComplete dataLayer model =
   case model.mode of
     Query ->
+      let
+        (lifeSearch, _) = LifeSearch.updateData myLife dataLayer.lives model.lifeSearch
+      in
+      ( { model
+        | dataLayer = dataLayer
+        , lifeSearch = lifeSearch
+        , mode = Results
+        }
+      , Cmd.none
+      )
+    Results ->
       let
         (lifeSearch, _) = LifeSearch.updateData myLife dataLayer.lives model.lifeSearch
       in
