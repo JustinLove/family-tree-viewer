@@ -41,7 +41,7 @@
 - x lost death cause
 - x remove graphviz
 - x thread max logs
-- ui cleanup
+- x ui cleanup
   - x can't resubmit query
   - x query vs results
 - possible cloudfront to get life data

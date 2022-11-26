@@ -66,9 +66,14 @@ view model =
       Display -> display model
 
 query model =
+  let
+    currentServer = model.serverList
+      |> RemoteData.map (List.foldl (\s name -> if Just s.id == model.selectedServer then Just s else name) Nothing)
+      |> RemoteData.withDefault Nothing
+  in
   column [ height fill, width fill ]
     [ searchBox model.searchTerm model.dataLayer.lives
-    , serverSelect model.serverList model.selectedServer
+    , serverSelect model.serverList currentServer
     , dateSelect StartDateChange "Start Date" model.startDateModel
     , dateSelect EndDateChange "End Date" model.endDateModel
     , dateWarning model.startDateModel.date model.endDateModel.date
@@ -273,12 +278,17 @@ searchBox searchTerm request =
     , el [ width fill ] none
     ]
 
-serverSelect : RemoteData (List Server) -> Maybe Int -> Element Msg
-serverSelect servers serverId =
+serverSelect : RemoteData (List Server) -> Maybe Server -> Element Msg
+serverSelect servers server =
+  let
+    serverName = server
+      |> Maybe.map .serverName
+      |> Maybe.withDefault ""
+  in
     Input.radioRow [ padding 10, spacing 2, htmlAttribute (Html.Attributes.class "server-select") ]
       { onChange = SelectServer
-      , selected = serverId
-      , label = Input.labelAbove [] (text "Server")
+      , selected = Maybe.map .id server
+      , label = Input.labelAbove [] (text ("Server " ++ serverName))
       , options = servers |> RemoteData.withDefault [] |> List.map serverItem
       }
 
