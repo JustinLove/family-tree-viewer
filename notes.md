@@ -40,8 +40,7 @@
 - x birth time in map
 - x lost death cause
 - x remove graphviz
-- thread max logs
-  - different for query vs. lineage?
+- x thread max logs
 - ui cleanup
 - possible cloudfront to get life data
   - need servers.json

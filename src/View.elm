@@ -367,8 +367,10 @@ dateWarning start end =
         none
       else if count < 60 then
         el [ Font.color caution ] (text "Large queries may make your browser slow or unstable")
-      else
+      else if count < 365 then
         el [ Font.color warning ] (text "Very large queries will likely make your browser slow or unstable")
+      else
+        el [ Font.color warning ] (text "Even if your browser can handle it, you are limited to one year")
     Nothing -> none
 
 displayFooter : Element msg
