@@ -1,49 +1,3 @@
-- raw log update
-  - x import layer
-  - x fetch logs
-  - x display results
-  - x apply search?
-  - x lineage query
-  - x select a result
-  - x query from search link
-  - x server list
-    - x hardcoded bigserver
-    - x server name param
-      - x query from ohol link
-- x graphviz render
-- x exceed maxlogs collapses time window and starts over
-- ui update
-  - x server
-  - time
-    - x update default date strings
-    - x colors etc
-    - https://package.elm-lang.org/packages/PanagiotisGeorgiadis/elm-datepicker/latest/
-    - https://package.elm-lang.org/packages/dwyl/elm-datepicker/latest/
-    - https://package.elm-lang.org/packages/n1k0/elm-daterange-picker/latest/
-    - https://package.elm-lang.org/packages/fabhof/elm-ui-datepicker/latest/
-  - x update search on typing
-  - x loading feedback
-  - x log limits
-  - x loading feedback
-- x lineage query requires most recent missing file, never finishes
-- elm render
-  https://package.elm-lang.org/packages/shamansir/elm-graph-render/
-  https://package.elm-lang.org/packages/goyalarchit/elm-dagre/
-- extended graph
-  - x rest of label
-  - x highlights
-  - x killer edges
-  - x query other nodes
-  - x killer names in death cause
-  - x color adjustments
-  - x ruby etc
-- x birth time in map
-- x lost death cause
-- x remove graphviz
-- x thread max logs
-- x ui cleanup
-  - x can't resubmit query
-  - x query vs results
 - possible cloudfront to get life data
   - need servers.json
 - zoom
@@ -61,6 +15,12 @@
   - population, clusters
   - OHOLData Life
   - event range was coming from population
+
+- date picker?
+  - https://package.elm-lang.org/packages/PanagiotisGeorgiadis/elm-datepicker/latest/
+  - https://package.elm-lang.org/packages/dwyl/elm-datepicker/latest/
+  - https://package.elm-lang.org/packages/n1k0/elm-daterange-picker/latest/
+  - https://package.elm-lang.org/packages/fabhof/elm-ui-datepicker/latest/
 
 - nicer loading indicator
 - styling
