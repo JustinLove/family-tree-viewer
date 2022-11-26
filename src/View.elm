@@ -239,8 +239,7 @@ display model =
     , height fill
     ]
     [ ("top-ui", row [ spacing 10, width fill ]
-      [ searchBox model.searchTerm model.dataLayer.lives
-      , Input.button []
+      [ Input.button []
         { onPress = Just Back
         , label = text "Back"
         }
