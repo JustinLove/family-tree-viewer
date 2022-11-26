@@ -1,5 +1,6 @@
 - possible cloudfront to get life data
   - need servers.json
+- changing url parameters
 - zoom
 - life mapping for render?
 - search loading feedback?
@@ -7,6 +8,7 @@
 ## test cases
  - 813 #server_name=bigserver2.onehouronelife.com&start_time=1581642490&end_time=1581649690&playerid=2692836
  - 2xx #server_name=bigserver2.onehouronelife.com&start_time=1667316147&end_time=1667323347&playerid=5590635
+ - on 2022-11-26 (data near log boundary) - #server_name=bigserver2.onehouronelife.com&start_time=1669417524&end_time=1669424724&playerid=5645358
 
 - ParseLive concerns
   - Life, Parent in OHOLData

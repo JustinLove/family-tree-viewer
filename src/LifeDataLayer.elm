@@ -92,11 +92,11 @@ loadingCount : LifeDataLayer -> Int
 loadingCount data =
   List.foldr (\(_,rd) accum -> if rd == Loading then accum + 1 else accum) 0 data.logs
 
-resolveLivesIfLoaded : Posix -> LifeDataLayer -> LifeDataLayer
-resolveLivesIfLoaded defaultTime data =
+resolveLivesIfLoaded : (Posix, Posix)-> LifeDataLayer -> LifeDataLayer
+resolveLivesIfLoaded defaultRange data =
   if List.all (\(_,rd) -> rd /= Loading) data.logs then
     resolveLives data
-      |> expandingQuery defaultTime
+      |> expandingQuery defaultRange
   else
     data
 
@@ -194,11 +194,11 @@ applyDisplayFilter filter lives =
     DisplayAll ->
       lives
 
-expandingQuery : Posix -> LifeDataLayer -> LifeDataLayer
-expandingQuery defaultTime data =
+expandingQuery : (Posix, Posix) -> LifeDataLayer -> LifeDataLayer
+expandingQuery defaultRange data =
   case data.displayFilter of
     DisplayLineageOf playerid ->
-      expandingQueryLineageOfLife data.serverId playerid defaultTime data
+      expandingQueryLineageOfLife data.serverId playerid defaultRange data
     _ ->
       data
 
@@ -302,21 +302,21 @@ oneHourAround (start, end) =
   , Time.millisToPosix ((Time.posixToMillis end) + oneHour)
   )
 
-queryLineageOfLife : Int -> Int -> Posix -> LifeDataLayer -> LifeDataLayer
-queryLineageOfLife serverId playerid startTime dataWithUnknownDisplay =
+queryLineageOfLife : Int -> Int -> (Posix, Posix) -> LifeDataLayer -> LifeDataLayer
+queryLineageOfLife serverId playerid defaultRange dataWithUnknownDisplay =
   let
     data = displayLineageOf playerid dataWithUnknownDisplay
-    (start, end) = eventRange startTime data
+    (start, end) = eventRange defaultRange data
       |> Maybe.map oneHourAround
-      |> Maybe.withDefault (startTime, startTime)
+      |> Maybe.withDefault defaultRange
   in
     updateUnlimited serverId start end data
 
-expandingQueryLineageOfLife : Int -> Int -> Posix -> LifeDataLayer -> LifeDataLayer
-expandingQueryLineageOfLife serverId playerid startTime dataWithUnknownDisplay =
+expandingQueryLineageOfLife : Int -> Int -> (Posix, Posix) -> LifeDataLayer -> LifeDataLayer
+expandingQueryLineageOfLife serverId playerid defaultRange dataWithUnknownDisplay =
   let
     data = displayLineageOf playerid dataWithUnknownDisplay
-    mrange = eventRange startTime data
+    mrange = eventRange defaultRange data
       |> Maybe.map oneHourAround
   in
     case mrange of
@@ -397,22 +397,22 @@ limit largest list =
   in
     List.drop (max 0 (length - largest)) list
 
-eventRange : Posix -> LifeDataLayer -> Maybe (Posix, Posix)
-eventRange defaultTime data =
+eventRange : (Posix, Posix) -> LifeDataLayer -> Maybe (Posix, Posix)
+eventRange defaultRange data =
   data.lives
     |> RemoteData.toMaybe
     |> Maybe.andThen (\lives -> if List.isEmpty lives then Nothing else Just lives)
-    |> Maybe.map (eventRangeOfLives defaultTime)
+    |> Maybe.map (eventRangeOfLives defaultRange)
 
-eventRangeOfLives : Posix -> List Parse.Life -> (Posix, Posix)
-eventRangeOfLives default unsortedData =
+eventRangeOfLives : (Posix, Posix) -> List Parse.Life -> (Posix, Posix)
+eventRangeOfLives (defaultStart, defaultEnd) unsortedData =
   let
     data = List.sortBy (.birthTime>>Time.posixToMillis>>negate) unsortedData
     lastBirth = data
       |> List.head
       |> Maybe.map .birthTime
-      |> Maybe.withDefault default
+      |> Maybe.withDefault defaultEnd
     firstEvent = data
-      |> List.foldl (\{birthTime} _ -> birthTime) default
+      |> List.foldl (\{birthTime} _ -> birthTime) defaultStart
   in
     (firstEvent, lastBirth)

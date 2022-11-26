@@ -215,7 +215,7 @@ update msg model =
     LayoutComplete ->
       ({model | layoutStatus = LayoutIdle}, Cmd.none)
     LayoutErrorReport (Ok message)->
-      ({model | layoutStatus = LayoutError message}, Cmd.none)
+      ({model | layoutStatus = LayoutError "There was an error laying out the graph."}, Cmd.none)
     LayoutErrorReport (Err err)->
       ({model | layoutStatus = LayoutError "Error decoding error"}, Cmd.none)
     CurrentZone zone ->
@@ -295,19 +295,26 @@ changeRouteTo location model =
     mserverId = case extractHashIntArgument "server_id" location of
       Just id -> Just id
       Nothing -> Maybe.map (idForServer model) mserverName
-    mbirthTime = extractHashIntArgument "start_time" location
+    mstartTime = extractHashIntArgument "start_time" location
+    mendTime = extractHashIntArgument "end_time" location
     mplayerid = extractHashIntArgument "playerid" location
   in
-    case (mserverId, mbirthTime, mplayerid) of
-      (Just serverId, Just birthTime, Just playerid) ->
-        let time = Time.millisToPosix (birthTime * 1000) in
+    case (mserverId, mstartTime, mplayerid) of
+      (Just serverId, Just startTime, Just playerid) ->
+        let
+          (birthTime, deathTime) = case mendTime of
+            Just endTime -> (startTime, endTime)
+            Nothing -> (startTime, startTime + 60 * 60)
+          birthPosix = (Time.millisToPosix (birthTime * 1000))
+          deathPosix = (Time.millisToPosix (deathTime * 1000))
+        in
         { model
         | location = location
         , selectedServer = mserverId
         , mode = Display
-        , timeRange = Just (relativeStartTime 72 time, time)
+        , timeRange = Just (relativeStartTime 72 birthPosix, deathPosix)
         }
-          |>  fetchLineage serverId playerid time
+          |>  fetchLineage serverId playerid (birthPosix, deathPosix)
       _ ->
         case model.lifeSearch.results of
           Data _ ->
@@ -380,10 +387,10 @@ fetchLivesAroundTime startTime endTime model =
   in
     fetchFilesForDataLayerIfNeeded updated model
 
-fetchLineage : Int -> Int -> Posix -> Model -> (Model, Cmd Msg)
-fetchLineage server playerid birthTime model =
+fetchLineage : Int -> Int -> (Posix, Posix) -> Model -> (Model, Cmd Msg)
+fetchLineage server playerid timeRange model =
   let
-    updated = LifeDataLayer.queryLineageOfLife server playerid birthTime model.dataLayer
+    updated = LifeDataLayer.queryLineageOfLife server playerid timeRange model.dataLayer
   in
     fetchFilesForDataLayerIfNeeded updated model
 
@@ -505,10 +512,9 @@ parseNames =
 lifeDataUpdated : LifeDataLayer.LifeDataLayer -> Model -> (Model, Cmd Msg)
 lifeDataUpdated unresolvedDataLayer model =
   let
-    defaultTime = currentTimeRange model
-      |> Maybe.map Tuple.second
-      |> Maybe.withDefault (Time.millisToPosix 0)
-    dataLayer = LifeDataLayer.resolveLivesIfLoaded defaultTime unresolvedDataLayer
+    defaultRange = currentTimeRange model
+      |> Maybe.withDefault (Time.millisToPosix 0, Time.millisToPosix 0)
+    dataLayer = LifeDataLayer.resolveLivesIfLoaded defaultRange unresolvedDataLayer
     -- a lineage query may have discovered that the currently loaded data still has possible ancestors/children beyond the loaded data, and needed to expand the range
     neededDates = LifeDataLayer.neededDates dataLayer
   in
@@ -542,22 +548,31 @@ lifeDataUpdateComplete dataLayer model =
       , Cmd.none
       )
     Display ->
-      let
-        focus = LifeDataLayer.lifeUsedForLineageDisplay dataLayer
-          |> Maybe.andThen .accountHash
-      in
-      ( { model
-        | dataLayer = dataLayer
-        , layoutStatus = LayoutRendering
-        }
-      , dataLayer.lives
-        |> RemoteData.map (List.filter (\life -> case life.age of
-            Just age -> age > 0.5
-            Nothing -> True))
-        |> RemoteData.map (\lives -> lives ++ (RemoteData.withDefault [] dataLayer.others))
-        |> RemoteData.map (Dagre.layout (\life -> life.accountHash == focus))
-        |> RemoteData.withDefault Cmd.none
-      )
+      case dataLayer.lives of
+        Data [] ->
+          ( { model
+            | dataLayer = dataLayer
+            , layoutStatus = LayoutError "No lives were found. If this was a recent life, try again tomorrow."
+            }
+          , Cmd.none
+          )
+        _ ->
+          let
+            focus = LifeDataLayer.lifeUsedForLineageDisplay dataLayer
+              |> Maybe.andThen .accountHash
+          in
+          ( { model
+            | dataLayer = dataLayer
+            , layoutStatus = LayoutRendering
+            }
+          , dataLayer.lives
+            |> RemoteData.map (List.filter (\life -> case life.age of
+                Just age -> age > 0.5
+                Nothing -> True))
+            |> RemoteData.map (\lives -> lives ++ (RemoteData.withDefault [] dataLayer.others))
+            |> RemoteData.map (Dagre.layout (\life -> life.accountHash == focus))
+            |> RemoteData.withDefault Cmd.none
+          )
 
 resolveStringResponse : Http.Response String -> Result Http.Error String
 resolveStringResponse response =
