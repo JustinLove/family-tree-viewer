@@ -69,6 +69,7 @@ type alias Birth =
   , parent : Parent
   , birthPopulation : Int
   , chain : Int
+  , race : Maybe String
   }
 
 type alias Death =
@@ -323,6 +324,7 @@ rawBirthLine =
     |. spacesOnly
     |. tagName "chain"
     |= chain
+    |= race
 
 rawDeathLine : LifeParser Death
 rawDeathLine =
@@ -498,6 +500,29 @@ gender =
     ]
     |> inContext "looking for gender"
 
+race : LifeParser (Maybe String)
+race =
+  oneOf
+    [ succeed Just
+      |. spacesOnly
+      |. tagName "race"
+      |= raceId
+    , succeed Nothing
+    ]
+    |> inContext "looking for parent"
+
+raceId : LifeParser String
+raceId =
+  oneOf
+    [ succeed "A" |. symbol (Token "A" "looking for race A")
+    , succeed "B" |. symbol (Token "B" "looking for race B")
+    , succeed "C" |. symbol (Token "C" "looking for race C")
+    , succeed "D" |. symbol (Token "D" "looking for race D")
+    , succeed "E" |. symbol (Token "E" "looking for race E")
+    , succeed "F" |. symbol (Token "F" "looking for race F")
+    ]
+    |> inContext "looking for race"
+
 optional : LifeParser a -> LifeParser (Maybe a)
 optional parser =
   oneOf
@@ -566,7 +591,7 @@ shortDeathReason =
 deathReason : LifeParser String
 deathReason =
   getChompedString <|
-    chompWhile (\c -> Char.isAlphaNum c || c == '_')
+    chompWhile (\c -> c /= ' ' && c /= newlineChar && c /= carriageReturn)
 
 age : LifeParser Float
 age =
