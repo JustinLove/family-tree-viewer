@@ -20,6 +20,7 @@ module OHOLData.ParseLives exposing
   , LifeLog(..)
   , NameLog
   , Parent(..)
+  , BirthStatus(..)
   , Life
   )
 
@@ -37,6 +38,10 @@ type Parent
   | Lineage Int Int
   | NoParent
   | UnknownParent
+
+type BirthStatus
+  = Normal
+  | DonkeyTown
 
 type alias Life =
   { birthX : Int
@@ -70,6 +75,7 @@ type alias Birth =
   , birthPopulation : Int
   , chain : Int
   , race : Maybe String
+  , status : Maybe BirthStatus
   }
 
 type alias Death =
@@ -325,6 +331,7 @@ rawBirthLine =
     |. tagName "chain"
     |= chain
     |= race
+    |= birthStatus
 
 rawDeathLine : LifeParser Death
 rawDeathLine =
@@ -509,7 +516,7 @@ race =
       |= raceId
     , succeed Nothing
     ]
-    |> inContext "looking for parent"
+    |> inContext "looking for race"
 
 raceId : LifeParser String
 raceId =
@@ -522,6 +529,25 @@ raceId =
     , succeed "F" |. symbol (Token "F" "looking for race F")
     ]
     |> inContext "looking for race"
+
+birthStatus : LifeParser (Maybe BirthStatus)
+birthStatus =
+  oneOf
+    [ succeed Just
+      |. spacesOnly
+      |. tagName "status"
+      |= birthStatusId
+    , succeed Nothing
+    ]
+    |> inContext "looking for status"
+
+birthStatusId : LifeParser BirthStatus
+birthStatusId =
+  oneOf
+    [ succeed Normal |. symbol (Token "N" "looking for normal")
+    , succeed DonkeyTown |. symbol (Token "D" "looking for donkey")
+    ]
+    |> inContext "looking for status"
 
 optional : LifeParser a -> LifeParser (Maybe a)
 optional parser =
@@ -595,7 +621,12 @@ deathReason =
 
 age : LifeParser Float
 age =
-  float "looking for age" "invalid float"
+  oneOf
+    [ float "looking for age" "invalid float"
+    , succeed 0
+      |. token (Token "-" "looking for minus")
+      |. float "looking for negative age" "invalid float"
+    ]
 
 quotedName : LifeParser String
 quotedName =
